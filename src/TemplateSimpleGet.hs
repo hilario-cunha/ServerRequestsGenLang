@@ -43,7 +43,7 @@ mkUrlQueryPart queryPartName (CustomField _ n) = error "CustomField Not supporte
 
 mkArgs fields = map mkFormalParamMyField fields
 
-data TemplateSimpleGet = TemplateSimpleGet [Using] String [MethodTryTo]
+data TemplateSimpleGet = TemplateSimpleGet [String] String [MethodTryTo]
 
 data UrlPart = UrlPartLit String
     | UrlPartVar MyField
@@ -69,7 +69,7 @@ createAndWriteToFile fileName cu  = writeFile fileName $ prettyPrint cu
     
 createTemplateSimpleGet (TemplateSimpleGet extraUsings functionalityName methodsTryTo) = 
     createNamespaceWithClass
-        ((mkUsing "Tlantic.Server.Core") : (mkUsing "System") : extraUsings)
+        ("Tlantic.Server.Core" : "System" : extraUsings)
         ("Tlantic.Server." ++ functionalityName)
         (createClassWithMethods 
             cn

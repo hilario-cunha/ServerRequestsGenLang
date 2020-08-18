@@ -31,8 +31,7 @@ retailStoreIdQueryPart = mkUrlQueryPart "store" retailStoreIdField
 itemIdField = StringField "itemId"
 
 createSettingsServerRequestsFile = TemplateSimpleGet 
-    [ mkUsing "System.Collections.Generic"
-    , mkUsing "Tlantic.Server.Internal.Dtos"] 
+    [ "System.Collections.Generic", "Tlantic.Server.Internal.Dtos"] 
     "Settings" 
     [ MethodTryToPost 
         (MethodInfo "TryToGetGetSettingsForCodesRequestServer" (ResponseT "Response<List<Setting>>") [CustomField "string[]" "settingCodes"])
@@ -41,9 +40,7 @@ createSettingsServerRequestsFile = TemplateSimpleGet
     ]
 
 createTaskIntegrationsServerRequestsFile = TemplateSimpleGet 
-    [ mkUsing "Tlantic.Functional"
-    , mkUsing "System.Collections.Generic"
-    , mkUsing "Tlantic.Server.Internal.Dtos"] 
+    [ "Tlantic.Functional", "System.Collections.Generic", "Tlantic.Server.Internal.Dtos"] 
     "TaskIntegrations" 
     [ MethodTryToPost 
         (MethodInfo "TryToGetCreateNewFutureDateByIntegrationRequest" (ResponseT "Response") [retailStoreIdNotEmptyField, CustomField "List<NewFutureDateByIntegrationRequestResource>" "resources"])
@@ -65,7 +62,7 @@ createExpirationsServerRequestsFile = TemplateSimpleGet
     ]
 
 createUsersServerRequestsFile = TemplateSimpleGet 
-    [mkUsing "System.Collections.Generic"] 
+    ["System.Collections.Generic"] 
     "Users" 
     [ MethodTryToGet 
         (MethodInfo "TryToGetUserInfo" (ResponseT "UserInfo") [])
@@ -94,8 +91,7 @@ createTasksServerRequestsFile =
         toScheduledStartField = DateTimeNullableField "toScheduledStart"
         toScheduledStartQueryPart = mkUrlQueryPart "to_scheduled_start" toScheduledStartField
     in TemplateSimpleGet 
-    [ mkUsing "Tlantic.Functional"
-    , mkUsing "Tlantic.Server.Internal.Dtos"]
+    [ "Tlantic.Functional", "Tlantic.Server.Internal.Dtos"]
     "Tasks" 
     [ MethodTryToGet 
         (MethodInfo "TryToGetTasksInstoreAdapterRequest" (ResponseTArray "TasksInstoreAdapterResponse") [ offsetField, limitField
@@ -117,7 +113,7 @@ createResourcesServerRequestsFile =
     let 
         itemIdField = StringField "itemId"
     in TemplateSimpleGet 
-    [mkUsing "Tlantic.Functional"]
+    ["Tlantic.Functional"]
     "Resources" 
     [ MethodTryToGet 
         (MethodInfo "TryToGetFutureDatesRequest" (ResponseT "FutureDatesDto") [itemIdField, retailStoreIdNotEmptyField])
@@ -146,7 +142,7 @@ createProductsServerRequestsFile =
         expirationDateField = DateTimeField "expirationDate"
         expirationDateQueryPart = mkUrlQueryPart "date" expirationDateField
     in TemplateSimpleGet 
-    [mkUsing "Tlantic.Functional"]
+    ["Tlantic.Functional"]
     "Products" 
     [ MethodTryToGet 
         (MethodInfo "TryToGetExpirationsItemParametersRequest" (ResponseT "ExpirationsItemParameters") [itemIdField, retailStoreIdNotEmptyField])
@@ -198,7 +194,7 @@ createPrintersServerRequestsFile =
     let 
         macAddressField = StringNotEmptyField "macAddress"
     in TemplateSimpleGet 
-    [mkUsing "Tlantic.Functional"]
+    ["Tlantic.Functional"]
     "Printers" 
     [ MethodTryToGet 
         (MethodInfo "TryToGetPrinterRequest" (ResponseT "PrinterEntryReponse") [macAddressField])
