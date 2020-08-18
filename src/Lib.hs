@@ -6,6 +6,7 @@ import Language.CSharp.Syntax
 import Language.CSharp.Pretty
 import Gen
 import TemplateSimpleGet
+import CSharpGen
 
 someFunc :: IO ()
 someFunc = do

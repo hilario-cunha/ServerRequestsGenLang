@@ -15,6 +15,7 @@ module TemplateSimpleGet
 import Language.CSharp.Syntax
 import Language.CSharp.Pretty
 import Gen
+import CSharpGen
 
 data MyField = IntField String
     | StringField String
@@ -82,7 +83,7 @@ createTemplateSimpleGet (TemplateSimpleGet extraUsings functionalityName methods
 
 
 mkTemplateSimpleGetClass classWithMethods = 
-    mkClass cn cb
+    mkPublicClass cn cb
     where 
         cn = className classWithMethods
         cb = mkTemplateSimpleGetClassBody cn classWithMethods
@@ -90,15 +91,16 @@ mkTemplateSimpleGetClass classWithMethods =
 mkTemplateSimpleGetClassBody ctorName classWithMethods = 
     (mkServerConfigField : ctor : ms)
     where 
+        mkServerConfigField = mkField "ServerConfig" "serverConfig"
         ctor = mkTemplateSimpleGetCtor ctorName
         ms = methods classWithMethods
 
-mkTemplateSimpleGetCtor ctorName = mkCtor ctorName [serverConfigFormalParam] [serverConfigAssign]
+mkTemplateSimpleGetCtor ctorName = mkConstructorMemberDeclaration [Internal] ctorName [serverConfigFormalParam] [serverConfigAssign]
     where
         serverConfigFormalParam = mkFormalParam "ServerConfig" "serverConfig"
-        serverConfigAssign = mkAssign "this.serverConfig" "serverConfig"
+        serverConfigAssign = mkAssignStatement "this.serverConfig" "serverConfig"
 
-mkForamParamFromUrlPart (UrlPartLit l) = mkStringLitArgument l
+mkForamParamFromUrlPart (UrlPartLit l) = mkLiteralStringArgument l
 mkForamParamFromUrlPart (UrlPartVar (IntField n)) = mkSimpleNameArgument  n
 mkForamParamFromUrlPart (UrlPartVar (StringField n)) = mkSimpleNameArgument n
 mkForamParamFromUrlPart (UrlPartVar (StringNotEmptyField n)) = mkSimpleNameArgument (n ++ ".Value")
@@ -110,10 +112,10 @@ mkForamParamFromUrlPart (UrlPartVar (CustomField t n)) = error "CustomField Not 
 mkInnerResponseTA (ResponseT t) = mkTypeNamedTypeArgument t
 mkInnerResponseTA (ResponseTArray t) = mkTypeArrayTypeArgument t
 
-mkTemplateSimpleGetMethodInfo (MethodInfo methodName responseT args) = mkMethodPublic methodReturnT methodName methodArgs
+mkTemplateSimpleGetMethodInfo (MethodInfo methodName responseT args) = mkMethodMemberDeclaration [Public] methodReturnT methodName methodArgs
     where 
-        methodReturnT = Just (mkTypeNamedArgs "IChoiceGetRequestWithRetry" [responseTA, networkErrorTA])
-        responseTA = TypeArgument (mkTypeNamedArgs "Response" [ mkInnerResponseTA responseT])
+        methodReturnT = (mkTypeNamedWithTypeArguments "IChoiceGetRequestWithRetry" [responseTA, networkErrorTA])
+        responseTA = TypeArgument (mkTypeNamedWithTypeArguments "Response" [ mkInnerResponseTA responseT])
         networkErrorTA = TypeArgument  (mkTypeNamed "NetworkError")
         methodArgs = mkArgs args
 
@@ -121,12 +123,12 @@ mkUrlBuilder urlGet = [partsVar, queryPartsVar, urlBuilderVar]
     where
         parts (UrlGet parts _) =  mkNew "UrlParts" (map mkForamParamFromUrlPart parts)
         partsVar = mkAndInitLocalVar "parts" $ parts urlGet
-        queryPart (UrlQueryPart n v) = mkNewArgument "UrlQueryParameter" [mkStringLitArgument n, mkSimpleNameArgument v]
+        queryPart (UrlQueryPart n v) = mkNewArgument "UrlQueryParameter" [mkLiteralStringArgument n, mkSimpleNameArgument v]
         queryParts (UrlGet _ q) =  mkNew "UrlQueryParameters" (map queryPart q)
         queryPartsVar = mkAndInitLocalVar "queryParts" (queryParts urlGet)
         urlBuilderVar = mkAndInitLocalVar "urlBuilder" $ mkNew "UrlBuilder" [mkSimpleNameArgument "parts", mkSimpleNameArgument "queryParts"]
 
-mkTemplateSimpleGetMethodBody responseTTypeArgument urlGet = MethodStatementBody (mkUrlBuilder urlGet ++ [ret])
+mkTemplateSimpleGetMethodBody responseTTypeArgument urlGet = (mkUrlBuilder urlGet ++ [ret])
     where 
         ret = mkReturnServerConfig "TryToGet" [responseTTypeArgument] [mkSimpleNameArgument "urlBuilder"]
 
@@ -145,16 +147,16 @@ mkData methodName args = mkAndInitLocalVar "data" $ mkInvocation (map mkArg args
         mkArg (CustomField t n) = mkSimpleNameArgument n
         mkInvocation args = Invocation (SimpleName (Identifier (methodName ++ "MapData")) []) args   
         
-mkTemplateSimplePostMethodBody methodName responseTTypeArgument dataT args urlGet = MethodStatementBody (mkUrlBuilder urlGet ++ [dataC, ret])
+mkTemplateSimplePostMethodBody methodName responseTTypeArgument dataT args urlGet = (mkUrlBuilder urlGet ++ [dataC, ret])
     where 
         dataC = mkData methodName args
         ret = mkReturnServerConfig "TryToPost" [(mkTypeNamedTypeArgument dataT), responseTTypeArgument] [mkSimpleNameArgument "urlBuilder", mkSimpleNameArgument "data"]
 
 mkReturnServerConfig mn tArgs args = Return (Just (Invocation (MemberAccess $ PrimaryMemberAccess (SimpleName (Identifier "serverConfig") [] ) (Identifier mn) tArgs) args))
 
-mkTemplateSimplePostMethodInfo (MethodInfo methodName responseT args) = mkMethodPublic methodReturnT methodName methodArgs
+mkTemplateSimplePostMethodInfo (MethodInfo methodName responseT args) = mkMethodMemberDeclaration [Public] methodReturnT methodName methodArgs
     where 
-        methodReturnT = Just (mkTypeNamedArgs "IChoicePostRequestWithRetry" [responseTA, networkErrorTA])
+        methodReturnT = (mkTypeNamedWithTypeArguments "IChoicePostRequestWithRetry" [responseTA, networkErrorTA])
         responseTA = mkInnerResponseTA responseT
         networkErrorTA = TypeArgument  (mkTypeNamed "NetworkError")
         methodArgs = mkArgs args
@@ -163,6 +165,5 @@ mkTemplateSimplePostMethod methodInfo dataT urlGet = mkTemplateSimplePostMethodI
     where 
         ms (MethodInfo methodName responseT args)  = mkTemplateSimplePostMethodBody methodName (mkInnerResponseTA responseT) dataT args urlGet
 
-mkServerConfigField = mkField "ServerConfig" "serverConfig"
 
 
