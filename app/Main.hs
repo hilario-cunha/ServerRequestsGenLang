@@ -43,6 +43,7 @@ generate =  do
     generateGeneric "PrintersServerRequests.dsl"
     generateGeneric "HierarchicalStructureServerRequests.dsl"
     generateGeneric "ResourcesServerRequests.dsl"
+    generateGeneric "UsersServerRequests.dsl"
     print "end"
 
 generateGeneric :: FilePath -> IO ()

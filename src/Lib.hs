@@ -12,7 +12,6 @@ someFunc :: IO ()
 someFunc = do
     createAndWriteToFileTemplateSimpleGet createProductsServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createTasksServerRequestsFile
-    createAndWriteToFileTemplateSimpleGet createUsersServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createExpirationsServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createTaskIntegrationsServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createSettingsServerRequestsFile
@@ -52,17 +51,6 @@ createExpirationsServerRequestsFile = TemplateSimpleGet
         (MethodInfo "TryToGetDeleteFutureDatesRequest" (ResponseT "Response") [itemIdField, CustomField "FutureDatesToDeleteDto" "datesToDelete"])
         "FutureDatesToDeleteDto"
         (UrlBuilder [UrlPartLit "expirations", UrlPartVar (StringField "itemId + \":deletebatch\"")] [])
-    ]
-
-createUsersServerRequestsFile = TemplateSimpleGet 
-    ["System.Collections.Generic"] 
-    "Users" 
-    [ MethodTryToGet 
-        (MethodInfo "TryToGetUserInfo" (ResponseT "UserInfo") [])
-        (UrlBuilder [UrlPartLit "users/user"] [])
-    , MethodTryToGet 
-        (MethodInfo "TryToGetUserStoresRequest" (ResponseT "List<Store>") [])
-        (UrlBuilder [UrlPartLit "user/stores"] [])
     ]
 
 createTasksServerRequestsFile = 
