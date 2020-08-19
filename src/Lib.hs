@@ -11,7 +11,6 @@ import CSharpGen
 someFunc :: IO ()
 someFunc = do
     createAndWriteToFileTemplateSimpleGet createPrintersServerRequestsFile
-    createAndWriteToFileTemplateSimpleGet createItemListsServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createProductsServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createHierarchicalStructureServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createResourcesServerRequestsFile
@@ -169,14 +168,6 @@ createProductsServerRequestsFile =
         (MethodInfo "TryToGetSendFutureValiditiesRequest" (ResponseT "Response") [itemIdNotEmptyField, CustomField "SendFutureValiditiesRequest" "sendFutureValiditiesRequest"])
         "SendFutureValiditiesRequestToSend"
         (UrlBuilder [UrlPartLit "products", UrlPartVar itemIdNotEmptyField, UrlPartLit "validities"] [])
-    ]
-
-createItemListsServerRequestsFile = TemplateSimpleGet 
-    []
-    "ItemLists" 
-    [ MethodTryToGet 
-        (MethodInfo "TryToGetItemListsRequest" (ResponseTArray "ItemListEntryResponse") []) 
-        (UrlBuilder [UrlPartLit "item-lists"] [])
     ]
 
 createPrintersServerRequestsFile :: TemplateSimpleGet

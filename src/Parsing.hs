@@ -87,4 +87,4 @@ parseUrlQueryPart search = do
 
 
 parseNames :: Parser String
-parseNames = many1 (letter <|> digit)
+parseNames = many1 (letter <|> digit <|> symbol)
