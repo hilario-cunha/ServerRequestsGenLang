@@ -51,10 +51,14 @@ mkName :: String -> Name
 mkName n = (Name [Identifier n])
 
 mkPrimaryMemberAccess :: Expression -> String -> MemberAccess
-mkPrimaryMemberAccess obj p = PrimaryMemberAccess obj (Identifier p) []
+mkPrimaryMemberAccess obj p = mkPrimaryMemberAccessWithTypeArguments obj p []
+
+mkPrimaryMemberAccessWithTypeArguments :: Expression -> String -> [TypeArgument] -> MemberAccess
+mkPrimaryMemberAccessWithTypeArguments obj p typeArguments = PrimaryMemberAccess obj (Identifier p) typeArguments
 
 mkPrimaryMemberAccessThisDot :: String -> MemberAccess
 mkPrimaryMemberAccessThisDot p = PrimaryMemberAccess This (Identifier p) []
+
 
 mkAssign :: Expression -> Expression -> Expression
 mkAssign l r = Assign l OpAssign r
