@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fbac7489579886b8888654634d8b5311f35423a697afb1dd7e1a896e7fddcaf0
+-- hash: 8933ad7bb28646495b3943f7be061661b30704ba26365f0a520313167e9f28a7
 
 name:           ServerRequestsGenLang
 version:        0.1.0.0
@@ -30,6 +30,7 @@ library
       CSharpGen
       Gen
       Lib
+      ParsingUtils
       TemplateSimpleGet
   other-modules:
       Paths_ServerRequestsGenLang
@@ -38,6 +39,7 @@ library
   build-depends:
       base >=4.7 && <5
     , language-csharp
+    , parsec (>=3.1.14.0 && <3.2) && <3.2
   default-language: Haskell2010
 
 executable ServerRequestsGenLang-exe
@@ -51,6 +53,7 @@ executable ServerRequestsGenLang-exe
       ServerRequestsGenLang
     , base >=4.7 && <5
     , language-csharp
+    , parsec (>=3.1.14.0 && <3.2) && <3.2
   default-language: Haskell2010
 
 test-suite ServerRequestsGenLang-test
@@ -65,4 +68,5 @@ test-suite ServerRequestsGenLang-test
       ServerRequestsGenLang
     , base >=4.7 && <5
     , language-csharp
+    , parsec (>=3.1.14.0 && <3.2) && <3.2
   default-language: Haskell2010
