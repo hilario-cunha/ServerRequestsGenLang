@@ -12,7 +12,7 @@ namespace Tlantic.Server.Resources
         }
         public IChoiceGetRequestWithRetry<Response<FutureDatesDto>,NetworkError> TryToGetFutureDatesRequest(string itemId,StringNotEmpty retailStoreId)
         {
-            var parts = new UrlParts("resources/items/sku",itemId,"expirations");
+            var parts = new UrlParts("resources","items","sku",itemId,"expirations");
             var queryParts = new UrlQueryParameters(new UrlQueryParameter("store",retailStoreId.Value));
             var urlBuilder = new UrlBuilder(parts,queryParts);
             return serverConfig.TryToGet<FutureDatesDto>(urlBuilder);

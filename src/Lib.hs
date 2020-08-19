@@ -11,7 +11,6 @@ import CSharpGen
 someFunc :: IO ()
 someFunc = do
     createAndWriteToFileTemplateSimpleGet createProductsServerRequestsFile
-    createAndWriteToFileTemplateSimpleGet createResourcesServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createTasksServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createUsersServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createExpirationsServerRequestsFile
@@ -101,17 +100,6 @@ createTasksServerRequestsFile =
         (MethodInfo "TryToGetCreateTaskRequest" (ResponseT "Response<CreateTaskResponse>") [CustomField "CreateTaskRequest" "createTaskRequest"])
         "CreateTaskRequestToSend"
         (UrlBuilder [UrlPartLit "tasks"] []) 
-    ]
-
-createResourcesServerRequestsFile = 
-    let 
-        itemIdField = StringField "itemId"
-    in TemplateSimpleGet 
-    ["Tlantic.Functional"]
-    "Resources" 
-    [ MethodTryToGet 
-        (MethodInfo "TryToGetFutureDatesRequest" (ResponseT "FutureDatesDto") [itemIdField, retailStoreIdNotEmptyField])
-        (UrlBuilder [UrlPartLit "resources/items/sku", UrlPartVar itemIdField, UrlPartLit "expirations"] [retailStoreIdNotEmptyQueryPart]) 
     ]
 
 createProductsServerRequestsFile = 
