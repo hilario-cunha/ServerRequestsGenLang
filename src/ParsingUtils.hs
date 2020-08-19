@@ -12,14 +12,14 @@ atLeastOneWs = skipMany1 (oneOf " ")
 lexeme :: Parser a -> Parser a
 lexeme p = ws *> p <* ws
 
-sepByComma1 :: Parser a -> Parser [a]
-sepByComma1 p = (sepBy1 (lexeme p) (char ','))
+sepByComma :: Parser a -> Parser [a]
+sepByComma p = (sepBy (lexeme p) (char ','))
 
 betweenBrackets :: Parser a -> Parser a
 betweenBrackets = between (char '[') (char ']') 
 
 betweenBracketsSepByComma :: Parser a -> Parser [a]
-betweenBracketsSepByComma p = betweenBrackets (sepByComma1 p)
+betweenBracketsSepByComma p = betweenBrackets (sepByComma p)
 
 keywordP :: Parser a -> Parser a
 keywordP p = ws *> p <* atLeastOneWs

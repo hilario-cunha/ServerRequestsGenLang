@@ -12,6 +12,8 @@ module TemplateSimpleGet
     , ResponseT(..)
     , mkUrlQueryPartVar
     , mkUrlQueryPartLiteral
+    , extractNameFromMyField
+    , extractFieldsFromMethodInfo
     ) where
 
 import Language.CSharp.Syntax
@@ -26,6 +28,16 @@ data MyField= IntField String
             | DateTimeField String
             | DateTimeNullableField String
             | CustomField String String
+            deriving Show
+
+extractNameFromMyField :: MyField -> String
+extractNameFromMyField (IntField n) = n
+extractNameFromMyField (StringField n) = n
+extractNameFromMyField (StringNotEmptyField n) = n
+extractNameFromMyField (StringNotEmptyArrayField n) = n
+extractNameFromMyField (DateTimeField n) = n
+extractNameFromMyField (DateTimeNullableField n) = n
+extractNameFromMyField (CustomField _ n) = n
 
 mkFormalParamMyField (IntField n) = mkFormalParam "int" n
 mkFormalParamMyField (StringField n) = mkFormalParam "string" n
@@ -39,12 +51,16 @@ mkFormalParamMyField (CustomField t n) = mkFormalParam t n
 mkArgs fields = map mkFormalParamMyField fields
 
 data TemplateSimpleGet = TemplateSimpleGet [String] String [MethodTryTo]
+    deriving Show
 
 data UrlPart    = UrlPartLit String
                 | UrlPartVar MyField
+                deriving Show
 
 data UrlQueryPartValue = UrlQueryPartLit String | UrlQueryPartVar MyField
+    deriving Show
 data UrlQueryPart = UrlQueryPart String UrlQueryPartValue
+    deriving Show
 
 mkUrlQueryPartVar :: String -> MyField -> UrlQueryPart
 mkUrlQueryPartVar n field = UrlQueryPart n $ UrlQueryPartVar field
@@ -53,17 +69,24 @@ mkUrlQueryPartLiteral :: String -> String -> UrlQueryPart
 mkUrlQueryPartLiteral n literal = UrlQueryPart n $ UrlQueryPartLit literal
 
 data UrlBuilder = UrlBuilder [UrlPart] [UrlQueryPart]
+    deriving Show
 
 
 data ResponseT  = ResponseT String
                 | ResponseTArray String
+                deriving Show
 
 type MethodName = String
 
 data MethodInfo = MethodInfo MethodName ResponseT [MyField]
+    deriving Show
+
+extractFieldsFromMethodInfo :: MethodInfo -> [MyField]
+extractFieldsFromMethodInfo (MethodInfo _ _ fields) = fields
 
 data MethodTryTo= MethodTryToGet MethodInfo UrlBuilder
                 | MethodTryToPost MethodInfo String UrlBuilder
+                deriving Show
 
 createAndWriteToFileTemplateSimpleGet templateData  = 
     let 

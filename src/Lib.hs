@@ -10,10 +10,7 @@ import CSharpGen
 
 someFunc :: IO ()
 someFunc = do
-    createAndWriteToFileTemplateSimpleGet createBarcodesServerRequestsFile
-    createAndWriteToFileTemplateSimpleGet createChecklistsServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createPrintersServerRequestsFile
-    createAndWriteToFileTemplateSimpleGet createDocumentsServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createItemListsServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createProductsServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createHierarchicalStructureServerRequestsFile
@@ -182,14 +179,7 @@ createItemListsServerRequestsFile = TemplateSimpleGet
         (UrlBuilder [UrlPartLit "item-lists"] [])
     ]
 
-createDocumentsServerRequestsFile = TemplateSimpleGet 
-    []
-    "Documents" 
-    [ MethodTryToGet 
-        (MethodInfo "TryToGetGetAvailableLabelsRequest" (ResponseTArray "DocumentEntryResponse") [retailStoreIdField])
-        (UrlBuilder [UrlPartLit "documents"] [retailStoreIdQueryPart]) 
-    ]
-
+createPrintersServerRequestsFile :: TemplateSimpleGet
 createPrintersServerRequestsFile = 
     let 
         macAddressField = StringNotEmptyField "macAddress"
@@ -203,20 +193,3 @@ createPrintersServerRequestsFile =
         (MethodInfo "TryToGetPrintersRequest" (ResponseTArray "PrinterEntryReponse") [retailStoreIdField])
         (UrlBuilder [UrlPartLit "printers"] [retailStoreIdQueryPart])
     ]
-
-createChecklistsServerRequestsFile = TemplateSimpleGet 
-    []
-    "Checklists" 
-    [ MethodTryToGet 
-        (MethodInfo "TryToGetChecklistsRequest" (ResponseTArray "ChecklistEntryResponse") [])
-        (UrlBuilder [UrlPartLit "checklists"] [])
-    ]
-    
-createBarcodesServerRequestsFile = TemplateSimpleGet 
-    []
-    "Barcodes" 
-    [ MethodTryToGet 
-        (MethodInfo "TryToGetScanCodeRulesRequest" (ResponseTArray "BarcodeRule") [])
-        (UrlBuilder [UrlPartLit "barcodes/rules"] [])
-    ]
-    
