@@ -40,6 +40,7 @@ generate =  do
     generateGeneric "ChecklistsServerRequests.dsl"
     generateGeneric "DocumentsServerRequests.dsl"
     generateGeneric "ItemListsServerRequests.dsl"
+    generateGeneric "PrintersServerRequests.dsl"
     print "end"
 
 generateGeneric :: FilePath -> IO ()

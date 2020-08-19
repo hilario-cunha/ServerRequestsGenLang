@@ -21,15 +21,13 @@ parseTemplateSimpleGet :: Parser TemplateSimpleGet
 parseTemplateSimpleGet = TemplateSimpleGet <$> parseExtraUsings <*> parseFunctionalityName <*> parseMethodsTryTo
         
 parseExtraUsings :: Parser [String]
-parseExtraUsings = return []
+parseExtraUsings = (char 'u' *> ws *> betweenBracketsSepByComma (lexeme parseUsing) <* spaces) <|> (return [])
 
 parseFunctionalityName :: Parser String
 parseFunctionalityName = char 'f' *> (lexeme parseNames) <* spaces
 
 parseMethodsTryTo :: Parser [MethodTryTo]
-parseMethodsTryTo = do
-    m <- parseMethodTryTo
-    return [m]
+parseMethodsTryTo = many1 parseMethodTryTo
 
 
 searchField :: [MyField] -> String -> Maybe MyField
@@ -42,6 +40,7 @@ parseMethodTryTo = do
     methodInfo <- parseMethodInfo
     let fields = extractFieldsFromMethodInfo methodInfo
     urlBuilder <- parseUrlBuilder $ searchField fields
+    spaces
     return $ MethodTryToGet methodInfo urlBuilder
         
 parseMethodInfo :: Parser MethodInfo
@@ -57,19 +56,24 @@ parseMyField = do
     fieldType <- lexeme parseNames
     case fieldType of
         "String" -> StringField <$> (lexeme parseNames)
+        "StringNotEmpty" -> StringNotEmptyField <$> (lexeme parseNames)
         _ -> CustomField fieldType <$> (lexeme parseNames)
 
 parseResponseT :: Parser ResponseT
 parseResponseT = (ResponseTArray <$> betweenBrackets parseNames) <|> (ResponseT <$> parseNames)
 
 parseUrlBuilder :: (String -> Maybe MyField) -> Parser UrlBuilder
-parseUrlBuilder search = UrlBuilder <$> lexeme parseUrlParts <*> (parseUrlQueryParts search) 
+parseUrlBuilder search = UrlBuilder <$> lexeme (parseUrlParts search) <*> (parseUrlQueryParts search) 
 
-parseUrlParts :: Parser [UrlPart]
-parseUrlParts = betweenBracketsSepByComma parseUrlPart
+parseUrlParts :: (String -> Maybe MyField) -> Parser [UrlPart]
+parseUrlParts search = betweenBracketsSepByComma (parseUrlPart search)
 
-parseUrlPart :: Parser UrlPart
-parseUrlPart = UrlPartLit <$> parseUrlPartName
+parseUrlPart :: (String -> Maybe MyField) -> Parser UrlPart
+parseUrlPart search = do
+    fieldName <- lexeme parseNames
+    case search fieldName of
+        Just field -> return $ UrlPartVar field
+        Nothing -> return $ UrlPartLit fieldName
 
 parseUrlPartName :: Parser String
 parseUrlPartName = parseNames
@@ -85,6 +89,9 @@ parseUrlQueryPart search = do
         Just field -> return $ mkUrlQueryPartVar n field
         Nothing -> return $ mkUrlQueryPartLiteral n fieldName
 
+
+parseUsing :: Parser String
+parseUsing = many1 (letter <|> digit <|> symbol <|> char '.')
 
 parseNames :: Parser String
 parseNames = many1 (letter <|> digit <|> symbol)
