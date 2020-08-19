@@ -10,9 +10,7 @@ import CSharpGen
 
 someFunc :: IO ()
 someFunc = do
-    createAndWriteToFileTemplateSimpleGet createPrintersServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createProductsServerRequestsFile
-    createAndWriteToFileTemplateSimpleGet createHierarchicalStructureServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createResourcesServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createTasksServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createUsersServerRequestsFile
@@ -116,17 +114,6 @@ createResourcesServerRequestsFile =
         (UrlBuilder [UrlPartLit "resources/items/sku", UrlPartVar itemIdField, UrlPartLit "expirations"] [retailStoreIdNotEmptyQueryPart]) 
     ]
 
-createHierarchicalStructureServerRequestsFile = 
-    let 
-        rootHsIdField = StringField "rootHsId"
-    in TemplateSimpleGet 
-    []
-    "HierarchicalStructure" 
-    [ MethodTryToGet 
-        (MethodInfo "TryToGetHierarchicalStructureRequest" (ResponseTArray "HierarchicalStructureEntry") [rootHsIdField])
-        (UrlBuilder [UrlPartLit "hierarchicalstructure", UrlPartVar rootHsIdField] [])
-    ]
-
 createProductsServerRequestsFile = 
     let 
         itemIdField = StringField "itemId"
@@ -168,19 +155,4 @@ createProductsServerRequestsFile =
         (MethodInfo "TryToGetSendFutureValiditiesRequest" (ResponseT "Response") [itemIdNotEmptyField, CustomField "SendFutureValiditiesRequest" "sendFutureValiditiesRequest"])
         "SendFutureValiditiesRequestToSend"
         (UrlBuilder [UrlPartLit "products", UrlPartVar itemIdNotEmptyField, UrlPartLit "validities"] [])
-    ]
-
-createPrintersServerRequestsFile :: TemplateSimpleGet
-createPrintersServerRequestsFile = 
-    let 
-        macAddressField = StringNotEmptyField "macAddress"
-    in TemplateSimpleGet 
-    ["Tlantic.Functional"]
-    "Printers" 
-    [ MethodTryToGet 
-        (MethodInfo "TryToGetPrinterRequest" (ResponseT "PrinterEntryReponse") [macAddressField])
-        (UrlBuilder [UrlPartLit "printers", UrlPartVar macAddressField] [])
-    , MethodTryToGet 
-        (MethodInfo "TryToGetPrintersRequest" (ResponseTArray "PrinterEntryReponse") [retailStoreIdField])
-        (UrlBuilder [UrlPartLit "printers"] [retailStoreIdQueryPart])
     ]

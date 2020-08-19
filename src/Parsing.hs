@@ -29,7 +29,6 @@ parseFunctionalityName = char 'f' *> (lexeme parseNames) <* spaces
 parseMethodsTryTo :: Parser [MethodTryTo]
 parseMethodsTryTo = many1 parseMethodTryTo
 
-
 searchField :: [MyField] -> String -> Maybe MyField
 searchField fields fieldName = case filter (\f -> fieldName == extractNameFromMyField f) fields of
     [] -> Nothing
@@ -88,7 +87,6 @@ parseUrlQueryPart search = do
     case search fieldName of
         Just field -> return $ mkUrlQueryPartVar n field
         Nothing -> return $ mkUrlQueryPartLiteral n fieldName
-
 
 parseUsing :: Parser String
 parseUsing = many1 (letter <|> digit <|> symbol <|> char '.')
