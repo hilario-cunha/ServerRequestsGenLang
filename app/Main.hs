@@ -47,6 +47,7 @@ generate =  do
     generateGeneric "SettingsServerRequests.dsl"
     generateGeneric "TaskIntegrationsServerRequests.dsl"
     generateGeneric "ProductsServerRequests.dsl"
+    generateGeneric "TasksServerRequests.dsl"
     print "end"
 
 generateGeneric :: FilePath -> IO ()

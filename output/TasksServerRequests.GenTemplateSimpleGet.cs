@@ -25,7 +25,7 @@ namespace Tlantic.Server.Tasks
             var urlBuilder = new UrlBuilder(parts,queryParts);
             return serverConfig.TryToGet<TasksSummaryResponse>(urlBuilder);
         }
-        public IChoicePostRequestWithRetry<Response<CreateTaskResponse>,NetworkError> TryToGetCreateTaskRequest(CreateTaskRequest createTaskRequest,CreateTaskRequestToSend data)
+        public IChoicePostRequestWithRetry<Response<CreateTaskResponse>,NetworkError> TryToGetCreateTaskRequest(CreateTaskRequestToSend data)
         {
             var parts = new UrlParts("tasks");
             var queryParts = new UrlQueryParameters();

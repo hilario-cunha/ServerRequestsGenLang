@@ -69,11 +69,16 @@ parseMyField = do
         "String" -> StringField <$> (lexeme parseNames)
         "StringNotEmpty" -> StringNotEmptyField <$> (lexeme parseNames)
         "DateTime" -> DateTimeField <$> (lexeme parseNames)
+        "Int" -> IntField <$> (lexeme parseNames)
+        "StringNotEmptyArray" -> StringNotEmptyArrayField <$> (lexeme parseNames)
+        "DateTimeNullable" -> DateTimeNullableField <$> (lexeme parseNames)
         _ -> CustomField fieldType <$> (lexeme parseNames)
 
 parseResponseT :: Parser ResponseT
 parseResponseT = (ResponseTArray <$> betweenBrackets parseNames) <|> (ResponseT <$> parseNames)
 
+--TODO: implement new parsing model
+-- resources/items/sku/p{itemId}s/expirations?store={retailStoreId}&b={b}
 parseUrlBuilder :: (String -> Maybe MyField) -> Parser UrlBuilder
 parseUrlBuilder search = UrlBuilder <$> lexeme (parseUrlParts search) <*> (parseUrlQueryParts search) 
 
