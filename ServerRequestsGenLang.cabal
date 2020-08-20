@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5829197d444f49cd76563c207e3401b67b1c93070f1e7e1c29b29269896ce9f9
+-- hash: cbc32af51a747e147afd9208f7d0220a5050d860a0876abb126e867b3f3efc48
 
 name:           ServerRequestsGenLang
 version:        0.1.0.0
@@ -29,7 +29,6 @@ library
   exposed-modules:
       CSharpGen
       Gen
-      Lib
       Parsing
       ParsingUtils
       TemplateSimpleGet

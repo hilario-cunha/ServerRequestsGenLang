@@ -1,6 +1,5 @@
 module Main where
 
-import Lib
 import Language.CSharp.Parser
 import Language.CSharp.Lexer
 import Parsing
@@ -9,7 +8,6 @@ import TemplateSimpleGet
 main :: IO ()
 main = 
     generate
-    -- someFunc
 -- main = print $ parser "ex" l
 
 l = lexer c
@@ -48,6 +46,7 @@ generate =  do
     generateGeneric "TaskIntegrationsServerRequests.dsl"
     generateGeneric "ProductsServerRequests.dsl"
     generateGeneric "TasksServerRequests.dsl"
+    generateGeneric "ExpirationsServerRequests.dsl"
     print "end"
 
 generateGeneric :: FilePath -> IO ()

@@ -8,6 +8,7 @@ import Data.Functor (void)
 import Control.Applicative hiding ((<|>), optional, many)
 import ParsingUtils
 import TemplateSimpleGet
+import Data.List(elemIndex)
 
 parseReadOrThrow :: String -> String -> Either String TemplateSimpleGet
 parseReadOrThrow description = readOrThrow description parseTemplateSimpleGet
@@ -83,31 +84,43 @@ parseUrlBuilder :: (String -> Maybe MyField) -> Parser UrlBuilder
 parseUrlBuilder search = UrlBuilder <$> lexeme (parseUrlParts search) <*> (parseUrlQueryParts search) 
 
 parseUrlParts :: (String -> Maybe MyField) -> Parser [UrlPart]
-parseUrlParts search = (sepBy (parseUrlPart search) (char '/'))
+parseUrlParts search = (many (parseUrlPart search))
 
 parseUrlPart :: (String -> Maybe MyField) -> Parser UrlPart
-parseUrlPart search = ((char '{') *> (parseUrlPartVar search)) <|> parseUrlPartLit
-
-parseUrlPartVar :: (String -> Maybe MyField) -> Parser UrlPart
-parseUrlPartVar search = do
-    fieldName <- manyTill parseUrlNameChar (char '}')
-    case search fieldName of
-        Just field -> return $ UrlPartVar field
-        Nothing -> fail $ "Unknow field with name (" ++ fieldName ++ ")"
-
-parseUrlPartLit :: Parser UrlPart
-parseUrlPartLit = do
-    fieldName <- parseUrlName
-    return $ UrlPartLit fieldName
-
-parseUrlName :: Parser String
-parseUrlName = many1 parseUrlNameChar
+parseUrlPart search = do
+    urlSection <- manyTill parseUrlNameChar ((char '/') <|> (oneOf " "))
+    let beginPosMaybe = elemIndex '{' urlSection
+    case beginPosMaybe of
+        Just beginPos -> 
+            do
+                let endPosMaybe = elemIndex '}' urlSection
+                case endPosMaybe of
+                    Just endPos -> 
+                        do
+                            let prefix = take beginPos urlSection
+                            let fieldName =  take (endPos - beginPos - 1) $ drop (beginPos+1) urlSection
+                            let suffix = drop (endPos + 1)  urlSection
+                            case search fieldName of
+                                Just field -> 
+                                    if((not $ null prefix) || (not $ null suffix))
+                                        then return $ UrlPartVar $ updateMyFieldName field prefix suffix
+                                        else return $ UrlPartVar field
+                                    where
+                                        addPrefix prefix = if(not $ null prefix) then "\"" ++ prefix ++ "\" + " else []
+                                        addSuffix suffix = if(not $ null suffix) then " + \"" ++ suffix ++ "\"" else []
+                                        updateMyFieldName (IntField n) prefix suffix = IntField $ addPrefix prefix ++ n ++ addSuffix suffix
+                                        updateMyFieldName (StringField n) prefix suffix = StringField $ addPrefix prefix ++ n ++ addSuffix suffix
+                                        updateMyFieldName (StringNotEmptyField n) prefix suffix = StringNotEmptyField $ addPrefix prefix ++ n ++ addSuffix suffix
+                                        updateMyFieldName (StringNotEmptyArrayField n) prefix suffix = StringNotEmptyArrayField $ addPrefix prefix ++ n ++ addSuffix suffix
+                                        updateMyFieldName (DateTimeField n) prefix suffix = DateTimeField $ addPrefix prefix ++ n ++ addSuffix suffix
+                                        updateMyFieldName (DateTimeNullableField n) prefix suffix = DateTimeNullableField $ addPrefix prefix ++ n ++ addSuffix suffix
+                                        updateMyFieldName (CustomField t n) prefix suffix = CustomField t $ addPrefix prefix ++ n ++ addSuffix suffix
+                                Nothing -> fail $ "Unknow field with name (" ++ fieldName ++ ")"
+                    Nothing -> fail $ "Is missing a ending }" 
+        Nothing -> return $ UrlPartLit urlSection
 
 parseUrlNameChar :: Parser Char
-parseUrlNameChar = letter <|> digit <|> char '-'
-
-parseUrlPartName :: Parser String
-parseUrlPartName = parseNames
+parseUrlNameChar = letter <|> digit <|> char '-' <|> char '{' <|> char '}'  <|> char ':'
 
 parseUrlQueryParts :: (String -> Maybe MyField) -> Parser [UrlQueryPart]
 parseUrlQueryParts search = betweenBracketsSepByComma (parseUrlQueryPart search)
