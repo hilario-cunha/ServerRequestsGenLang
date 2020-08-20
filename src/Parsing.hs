@@ -68,6 +68,7 @@ parseMyField = do
     case fieldType of
         "String" -> StringField <$> (lexeme parseNames)
         "StringNotEmpty" -> StringNotEmptyField <$> (lexeme parseNames)
+        "DateTime" -> DateTimeField <$> (lexeme parseNames)
         _ -> CustomField fieldType <$> (lexeme parseNames)
 
 parseResponseT :: Parser ResponseT

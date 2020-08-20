@@ -10,7 +10,6 @@ import CSharpGen
 
 someFunc :: IO ()
 someFunc = do
-    createAndWriteToFileTemplateSimpleGet createProductsServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createTasksServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createExpirationsServerRequestsFile
     
@@ -64,47 +63,4 @@ createTasksServerRequestsFile =
         (MethodInfo "TryToGetCreateTaskRequest" (ResponseT "Response<CreateTaskResponse>") [CustomField "CreateTaskRequest" "createTaskRequest"])
         "CreateTaskRequestToSend"
         (UrlBuilder [UrlPartLit "tasks"] []) 
-    ]
-
-createProductsServerRequestsFile = 
-    let 
-        itemIdField = StringField "itemId"
-        itemIdNotEmptyField = StringNotEmptyField "itemId"
-        eanField = StringField "ean"
-        eanQueryPart = mkUrlQueryPartVar "ean" eanField
-        dateField = DateTimeField "date"
-        chainField = StringNotEmptyField "chain"
-        expirationDateField = DateTimeField "expirationDate"
-        expirationDateQueryPart = mkUrlQueryPartVar "date" expirationDateField
-    in TemplateSimpleGet 
-    ["Tlantic.Functional"]
-    "Products" 
-    [ MethodTryToGet 
-        (MethodInfo "TryToGetExpirationsItemParametersRequest" (ResponseT "ExpirationsItemParameters") [itemIdField, retailStoreIdNotEmptyField])
-        (UrlBuilder [UrlPartLit "products", UrlPartVar itemIdField, UrlPartLit "expirations/parameters"] [retailStoreIdNotEmptyQueryPart]) 
-    , MethodTryToGet 
-        (MethodInfo "TryToGetDailySalesServerRequest" (ResponseT "Sales") [retailStoreIdNotEmptyField, eanField, dateField])
-        (UrlBuilder [UrlPartLit "products/eans", UrlPartVar eanField, UrlPartLit "sales", UrlPartVar retailStoreIdNotEmptyField, UrlPartVar dateField] [])
-    , MethodTryToGet 
-        (MethodInfo "TryToGetDamagesDestinationsRequest" (ResponseTArray "DamagesDestinationsResponse") [retailStoreIdNotEmptyField])
-        (UrlBuilder [UrlPartLit "products/damages", UrlPartVar retailStoreIdNotEmptyField, UrlPartLit "destinations"] [])
-    , MethodTryToGet 
-        (MethodInfo "TryToGetDamagesReasonsRequest" (ResponseTArray "DamagesReasonsResponse") []) 
-        (UrlBuilder [UrlPartLit "products/damages/reasons"] [])
-    , MethodTryToGet 
-        (MethodInfo "TryToGetExternalPVPRequest" (ResponseT "PriceValue") [ itemIdField, retailStoreIdNotEmptyField])
-        (UrlBuilder [UrlPartLit "products", UrlPartVar itemIdField, UrlPartLit "price"] [retailStoreIdNotEmptyQueryPart]) 
-    , MethodTryToGet 
-        (MethodInfo "TryToGetPricesRequest" (ResponseTArray "PriceResponse") [retailStoreIdNotEmptyField, itemIdNotEmptyField, eanField])
-        (UrlBuilder [UrlPartLit "products", UrlPartVar itemIdNotEmptyField, UrlPartLit "prices"] [retailStoreIdNotEmptyQueryPart, eanQueryPart]) 
-    , MethodTryToGet 
-        (MethodInfo "TryToGetOtherStoresStockRequest" (ResponseTArray "OtherStoresStockServerResponse") [itemIdNotEmptyField, chainField])
-        (UrlBuilder [UrlPartLit "products", UrlPartVar itemIdNotEmptyField, UrlPartLit "stock/chain", UrlPartVar chainField] [])
-    , MethodTryToGet 
-        (MethodInfo "TryToGetWithdrawalExternalInfoRequest" (ResponseT "WithdrawalExternalInfo") [itemIdField, expirationDateField, retailStoreIdNotEmptyField])
-        (UrlBuilder [UrlPartLit "products", UrlPartVar itemIdField, UrlPartLit "expirations/quantities"] [retailStoreIdNotEmptyQueryPart, expirationDateQueryPart])
-    , MethodTryToPost
-        (MethodInfo "TryToGetSendFutureValiditiesRequest" (ResponseT "Response") [itemIdNotEmptyField, CustomField "SendFutureValiditiesRequest" "sendFutureValiditiesRequest"])
-        "SendFutureValiditiesRequestToSend"
-        (UrlBuilder [UrlPartLit "products", UrlPartVar itemIdNotEmptyField, UrlPartLit "validities"] [])
     ]
