@@ -83,14 +83,28 @@ parseUrlBuilder :: (String -> Maybe MyField) -> Parser UrlBuilder
 parseUrlBuilder search = UrlBuilder <$> lexeme (parseUrlParts search) <*> (parseUrlQueryParts search) 
 
 parseUrlParts :: (String -> Maybe MyField) -> Parser [UrlPart]
-parseUrlParts search = betweenBracketsSepByComma (parseUrlPart search)
+parseUrlParts search = (sepBy (parseUrlPart search) (char '/'))
 
 parseUrlPart :: (String -> Maybe MyField) -> Parser UrlPart
-parseUrlPart search = do
-    fieldName <- lexeme parseNames
+parseUrlPart search = ((char '{') *> (parseUrlPartVar search)) <|> parseUrlPartLit
+
+parseUrlPartVar :: (String -> Maybe MyField) -> Parser UrlPart
+parseUrlPartVar search = do
+    fieldName <- manyTill parseUrlNameChar (char '}')
     case search fieldName of
         Just field -> return $ UrlPartVar field
-        Nothing -> return $ UrlPartLit fieldName
+        Nothing -> fail $ "Unknow field with name (" ++ fieldName ++ ")"
+
+parseUrlPartLit :: Parser UrlPart
+parseUrlPartLit = do
+    fieldName <- parseUrlName
+    return $ UrlPartLit fieldName
+
+parseUrlName :: Parser String
+parseUrlName = many1 parseUrlNameChar
+
+parseUrlNameChar :: Parser Char
+parseUrlNameChar = letter <|> digit <|> char '-'
 
 parseUrlPartName :: Parser String
 parseUrlPartName = parseNames
@@ -111,3 +125,4 @@ parseUsing = many1 (letter <|> digit <|> symbol <|> char '.')
 
 parseNames :: Parser String
 parseNames = many1 (letter <|> digit <|> symbol)
+

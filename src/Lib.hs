@@ -22,7 +22,7 @@ createExpirationsServerRequestsFile = TemplateSimpleGet
     [] 
     "Expirations" 
     [ MethodTryToPost 
-        (MethodInfo "TryToGetDeleteFutureDatesRequest" (ResponseT "Response") [itemIdField, CustomField "FutureDatesToDeleteDto" "datesToDelete"])
+        (MethodInfo "TryToGetDeleteFutureDatesRequest" (ResponseT "Response") [itemIdField])
         "FutureDatesToDeleteDto"
         (UrlBuilder [UrlPartLit "expirations", UrlPartVar (StringField "itemId + \":deletebatch\"")] [])
     ]

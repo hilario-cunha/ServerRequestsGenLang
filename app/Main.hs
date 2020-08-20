@@ -9,7 +9,7 @@ import TemplateSimpleGet
 main :: IO ()
 main = 
     generate
-    --someFunc
+    -- someFunc
 -- main = print $ parser "ex" l
 
 l = lexer c
