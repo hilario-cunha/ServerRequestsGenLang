@@ -84,11 +84,11 @@ parseUrlBuilder :: (String -> Maybe MyField) -> Parser UrlBuilder
 parseUrlBuilder search = UrlBuilder <$> lexeme (parseUrlParts search) <*> (parseUrlQueryParts search) 
 
 parseUrlParts :: (String -> Maybe MyField) -> Parser [UrlPart]
-parseUrlParts search = (many (parseUrlPart search))
+parseUrlParts search = (sepBy (parseUrlPart search) (char '/'))
 
 parseUrlPart :: (String -> Maybe MyField) -> Parser UrlPart
 parseUrlPart search = do
-    urlSection <- manyTill parseUrlNameChar ((char '/') <|> (oneOf " "))
+    urlSection <- many parseUrlNameChar
     let beginPosMaybe = elemIndex '{' urlSection
     case beginPosMaybe of
         Just beginPos -> 
@@ -123,15 +123,19 @@ parseUrlNameChar :: Parser Char
 parseUrlNameChar = letter <|> digit <|> char '-' <|> char '{' <|> char '}'  <|> char ':'
 
 parseUrlQueryParts :: (String -> Maybe MyField) -> Parser [UrlQueryPart]
-parseUrlQueryParts search = betweenBracketsSepByComma (parseUrlQueryPart search)
+parseUrlQueryParts search = (char '?' *> (sepBy (parseUrlQueryPart search) (char '&'))) <|> return []
 
 parseUrlQueryPart :: (String -> Maybe MyField) -> Parser UrlQueryPart
 parseUrlQueryPart search = do
-    n <- lexeme parseNames
-    fieldName <- lexeme parseNames
+    n <- lexeme parseQueryPartName
+    char '='
+    fieldName <- lexeme parseQueryPartName
     case search fieldName of
         Just field -> return $ mkUrlQueryPartVar n field
         Nothing -> return $ mkUrlQueryPartLiteral n fieldName
+
+parseQueryPartName :: Parser String
+parseQueryPartName = many1 (letter <|> digit <|> char '-' <|> char '_')
 
 parseUsing :: Parser String
 parseUsing = many1 (letter <|> digit <|> symbol <|> char '.')

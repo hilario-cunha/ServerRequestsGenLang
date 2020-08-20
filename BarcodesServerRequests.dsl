@@ -1,3 +1,3 @@
 f Barcodes
 m TryToGetScanCodeRulesRequest [BarcodeRule] []
-barcodes/rules []
+barcodes/rules
