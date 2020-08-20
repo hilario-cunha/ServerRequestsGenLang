@@ -36,18 +36,30 @@ searchField fields fieldName = case filter (\f -> fieldName == extractNameFromMy
 
 parseMethodTryTo :: Parser MethodTryTo
 parseMethodTryTo = do
-    methodInfo <- parseMethodInfo
-    let fields = extractFieldsFromMethodInfo methodInfo
-    urlBuilder <- parseUrlBuilder $ searchField fields
-    spaces
-    return $ MethodTryToGet methodInfo urlBuilder
+    methodAction <- char 'm' <|> char 'p'
+    case methodAction of
+        'm' -> do
+            methodInfo <- parseMethodInfo
+            spaces
+            let fields = extractFieldsFromMethodInfo methodInfo
+            urlBuilder <- parseUrlBuilder $ searchField fields
+            spaces
+            return $ MethodTryToGet methodInfo urlBuilder
+        'p' -> do
+            methodInfo <- parseMethodInfo
+            let fields = extractFieldsFromMethodInfo methodInfo
+            dataT <- (lexeme parseNames)
+            spaces
+            urlBuilder <- parseUrlBuilder $ searchField fields
+            spaces
+            return $ MethodTryToPost methodInfo dataT urlBuilder
+        _ -> fail $ "Unknow methodAction (" ++ [methodAction] ++ ")"
         
 parseMethodInfo :: Parser MethodInfo
 parseMethodInfo = do
-    methodName <- char 'm' *> (lexeme parseNames)
+    methodName <- (lexeme parseNames)
     responseT <- lexeme parseResponseT
     myFields <- betweenBracketsSepByComma parseMyField
-    spaces
     return $ MethodInfo methodName responseT myFields
 
 parseMyField :: Parser MyField

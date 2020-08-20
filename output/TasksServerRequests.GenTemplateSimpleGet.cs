@@ -25,12 +25,11 @@ namespace Tlantic.Server.Tasks
             var urlBuilder = new UrlBuilder(parts,queryParts);
             return serverConfig.TryToGet<TasksSummaryResponse>(urlBuilder);
         }
-        public IChoicePostRequestWithRetry<Response<CreateTaskResponse>,NetworkError> TryToGetCreateTaskRequest(CreateTaskRequest createTaskRequest)
+        public IChoicePostRequestWithRetry<Response<CreateTaskResponse>,NetworkError> TryToGetCreateTaskRequest(CreateTaskRequest createTaskRequest,CreateTaskRequestToSend data)
         {
             var parts = new UrlParts("tasks");
             var queryParts = new UrlQueryParameters();
             var urlBuilder = new UrlBuilder(parts,queryParts);
-            var data = TryToGetCreateTaskRequestMapData(createTaskRequest);
             return serverConfig.TryToPost<CreateTaskRequestToSend,Response<CreateTaskResponse>>(urlBuilder,data);
         }
     }

@@ -134,22 +134,11 @@ mkTemplateSimplePostMethod (MethodInfo methodName responseT args) dataT urlGet =
         responseTA = mkInnerResponseTA responseT
         networkErrorTA = TypeArgument  (mkTypeNamed "NetworkError")
 
-        methodArgs = mkArgs args
+        methodArgs = mkArgs (args ++ [CustomField dataT "data"])
         body  = mkTemplateSimplePostMethodBody methodName responseTA dataT args urlGet
-        mkTemplateSimplePostMethodBody methodName responseTTypeArgument dataT args urlGet = (mkUrlBuilder urlGet ++ [dataC, ret])
+        mkTemplateSimplePostMethodBody methodName responseTTypeArgument dataT args urlGet = (mkUrlBuilder urlGet ++ [ret])
             where 
-                dataC = mkData methodName args
                 ret = mkReturnServerConfig "TryToPost" [(mkTypeNamedTypeArgument dataT), responseTTypeArgument] [mkSimpleNameArgument "urlBuilder", mkSimpleNameArgument "data"]
-                mkData methodName args = mkAndInitLocalVar "data" $ mkInvocation (map mkArg args)
-                    where
-                        mkArg (IntField n) = mkSimpleNameArgument  n
-                        mkArg (StringField n) = mkSimpleNameArgument n
-                        mkArg (StringNotEmptyField n) = mkSimpleNameArgument n
-                        mkArg (StringNotEmptyArrayField n) = mkSimpleNameArgument n
-                        mkArg (DateTimeField n) = mkSimpleNameArgument n
-                        mkArg (DateTimeNullableField n) = mkSimpleNameArgument n
-                        mkArg (CustomField t n) = mkSimpleNameArgument n
-                        mkInvocation args = mkInvocationSimpleName (methodName ++ "MapData") args   
                 mkReturnServerConfig mn tArgs args = Return (Just (Invocation (MemberAccess $ PrimaryMemberAccess (SimpleName (Identifier "serverConfig") [] ) (Identifier mn) tArgs) args))
 
 mkTemplateSimpleGetClass classWithMethods = 

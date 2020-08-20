@@ -13,36 +13,12 @@ someFunc = do
     createAndWriteToFileTemplateSimpleGet createProductsServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createTasksServerRequestsFile
     createAndWriteToFileTemplateSimpleGet createExpirationsServerRequestsFile
-    createAndWriteToFileTemplateSimpleGet createTaskIntegrationsServerRequestsFile
-    createAndWriteToFileTemplateSimpleGet createSettingsServerRequestsFile
     
 retailStoreIdNotEmptyField = StringNotEmptyField "retailStoreId"
 retailStoreIdNotEmptyQueryPart = mkUrlQueryPartVar "store" retailStoreIdNotEmptyField
 retailStoreIdField = StringField "retailStoreId"
 retailStoreIdQueryPart = mkUrlQueryPartVar "store" retailStoreIdField
 itemIdField = StringField "itemId"
-
-createSettingsServerRequestsFile = TemplateSimpleGet 
-    [ "System.Collections.Generic", "Tlantic.Server.Internal.Dtos"] 
-    "Settings" 
-    [ MethodTryToPost 
-        (MethodInfo "TryToGetGetSettingsForCodesRequestServer" (ResponseT "Response<List<Setting>>") [CustomField "string[]" "settingCodes"])
-        "SettingsRequest"
-        (UrlBuilder [UrlPartLit "settings/entity/application"] [])
-    ]
-
-createTaskIntegrationsServerRequestsFile = TemplateSimpleGet 
-    [ "Tlantic.Functional", "System.Collections.Generic", "Tlantic.Server.Internal.Dtos"] 
-    "TaskIntegrations" 
-    [ MethodTryToPost 
-        (MethodInfo "TryToGetCreateNewFutureDateByIntegrationRequest" (ResponseT "Response") [retailStoreIdNotEmptyField, CustomField "List<NewFutureDateByIntegrationRequestResource>" "resources"])
-        "NewFutureDateByIntegrationRequest"
-        (UrlBuilder [UrlPartLit "task-integrations"] [])
-    , MethodTryToPost 
-        (MethodInfo "TryToGetCreateTaskAsyncRequest" (ResponseT "Response") [CustomField "CreateTaskAsyncRequest" "createTaskAsyncRequest"])
-        "CreateTaskAsyncRequestToSend"
-        (UrlBuilder [UrlPartLit "task-integrations"] [])
-    ]
 
 createExpirationsServerRequestsFile = TemplateSimpleGet 
     [] 

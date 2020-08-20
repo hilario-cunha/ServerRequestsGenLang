@@ -9,7 +9,7 @@ import TemplateSimpleGet
 main :: IO ()
 main = 
     generate
-    -- someFunc
+    --someFunc
 -- main = print $ parser "ex" l
 
 l = lexer c
@@ -44,6 +44,8 @@ generate =  do
     generateGeneric "HierarchicalStructureServerRequests.dsl"
     generateGeneric "ResourcesServerRequests.dsl"
     generateGeneric "UsersServerRequests.dsl"
+    generateGeneric "SettingsServerRequests.dsl"
+    generateGeneric "TaskIntegrationsServerRequests.dsl"
     print "end"
 
 generateGeneric :: FilePath -> IO ()

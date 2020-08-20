@@ -66,12 +66,11 @@ namespace Tlantic.Server.Products
             var urlBuilder = new UrlBuilder(parts,queryParts);
             return serverConfig.TryToGet<WithdrawalExternalInfo>(urlBuilder);
         }
-        public IChoicePostRequestWithRetry<Response,NetworkError> TryToGetSendFutureValiditiesRequest(StringNotEmpty itemId,SendFutureValiditiesRequest sendFutureValiditiesRequest)
+        public IChoicePostRequestWithRetry<Response,NetworkError> TryToGetSendFutureValiditiesRequest(StringNotEmpty itemId,SendFutureValiditiesRequest sendFutureValiditiesRequest,SendFutureValiditiesRequestToSend data)
         {
             var parts = new UrlParts("products",itemId.Value,"validities");
             var queryParts = new UrlQueryParameters();
             var urlBuilder = new UrlBuilder(parts,queryParts);
-            var data = TryToGetSendFutureValiditiesRequestMapData(itemId,sendFutureValiditiesRequest);
             return serverConfig.TryToPost<SendFutureValiditiesRequestToSend,Response>(urlBuilder,data);
         }
     }

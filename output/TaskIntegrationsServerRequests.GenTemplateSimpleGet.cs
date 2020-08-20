@@ -12,20 +12,18 @@ namespace Tlantic.Server.TaskIntegrations
         {
             this.serverConfig = serverConfig;
         }
-        public IChoicePostRequestWithRetry<Response,NetworkError> TryToGetCreateNewFutureDateByIntegrationRequest(StringNotEmpty retailStoreId,List<NewFutureDateByIntegrationRequestResource> resources)
+        public IChoicePostRequestWithRetry<Response,NetworkError> TryToGetCreateNewFutureDateByIntegrationRequest(NewFutureDateByIntegrationRequest data)
         {
             var parts = new UrlParts("task-integrations");
             var queryParts = new UrlQueryParameters();
             var urlBuilder = new UrlBuilder(parts,queryParts);
-            var data = TryToGetCreateNewFutureDateByIntegrationRequestMapData(retailStoreId,resources);
             return serverConfig.TryToPost<NewFutureDateByIntegrationRequest,Response>(urlBuilder,data);
         }
-        public IChoicePostRequestWithRetry<Response,NetworkError> TryToGetCreateTaskAsyncRequest(CreateTaskAsyncRequest createTaskAsyncRequest)
+        public IChoicePostRequestWithRetry<Response,NetworkError> TryToGetCreateTaskAsyncRequest(CreateTaskAsyncRequestToSend data)
         {
             var parts = new UrlParts("task-integrations");
             var queryParts = new UrlQueryParameters();
             var urlBuilder = new UrlBuilder(parts,queryParts);
-            var data = TryToGetCreateTaskAsyncRequestMapData(createTaskAsyncRequest);
             return serverConfig.TryToPost<CreateTaskAsyncRequestToSend,Response>(urlBuilder,data);
         }
     }

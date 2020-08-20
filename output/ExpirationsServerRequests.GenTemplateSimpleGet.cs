@@ -9,12 +9,11 @@ namespace Tlantic.Server.Expirations
         {
             this.serverConfig = serverConfig;
         }
-        public IChoicePostRequestWithRetry<Response,NetworkError> TryToGetDeleteFutureDatesRequest(string itemId,FutureDatesToDeleteDto datesToDelete)
+        public IChoicePostRequestWithRetry<Response,NetworkError> TryToGetDeleteFutureDatesRequest(string itemId,FutureDatesToDeleteDto datesToDelete,FutureDatesToDeleteDto data)
         {
             var parts = new UrlParts("expirations",itemId + ":deletebatch");
             var queryParts = new UrlQueryParameters();
             var urlBuilder = new UrlBuilder(parts,queryParts);
-            var data = TryToGetDeleteFutureDatesRequestMapData(itemId,datesToDelete);
             return serverConfig.TryToPost<FutureDatesToDeleteDto,Response>(urlBuilder,data);
         }
     }
