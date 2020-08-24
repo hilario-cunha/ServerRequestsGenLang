@@ -102,19 +102,7 @@ parseUrlPart search = do
                             let suffix = drop (endPos + 1)  urlSection
                             case search fieldName of
                                 Just field -> 
-                                    if((not $ null prefix) || (not $ null suffix))
-                                        then return $ UrlPartVar $ updateMyFieldName field prefix suffix
-                                        else return $ UrlPartVar field
-                                    where
-                                        addPrefix prefix = if(not $ null prefix) then "\"" ++ prefix ++ "\" + " else []
-                                        addSuffix suffix = if(not $ null suffix) then " + \"" ++ suffix ++ "\"" else []
-                                        updateMyFieldName (IntField n) prefix suffix = IntField $ addPrefix prefix ++ n ++ addSuffix suffix
-                                        updateMyFieldName (StringField n) prefix suffix = StringField $ addPrefix prefix ++ n ++ addSuffix suffix
-                                        updateMyFieldName (StringNotEmptyField n) prefix suffix = StringNotEmptyField $ addPrefix prefix ++ n ++ addSuffix suffix
-                                        updateMyFieldName (StringNotEmptyArrayField n) prefix suffix = StringNotEmptyArrayField $ addPrefix prefix ++ n ++ addSuffix suffix
-                                        updateMyFieldName (DateTimeField n) prefix suffix = DateTimeField $ addPrefix prefix ++ n ++ addSuffix suffix
-                                        updateMyFieldName (DateTimeNullableField n) prefix suffix = DateTimeNullableField $ addPrefix prefix ++ n ++ addSuffix suffix
-                                        updateMyFieldName (CustomField t n) prefix suffix = CustomField t $ addPrefix prefix ++ n ++ addSuffix suffix
+                                    return $ UrlPartVar $ UrlField prefix field suffix
                                 Nothing -> fail $ "Unknow field with name (" ++ fieldName ++ ")"
                     Nothing -> fail $ "Is missing a ending }" 
         Nothing -> return $ UrlPartLit urlSection
