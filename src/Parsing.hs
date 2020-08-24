@@ -78,8 +78,6 @@ parseMyField = do
 parseResponseT :: Parser ResponseT
 parseResponseT = (ResponseTArray <$> betweenBrackets parseNames) <|> (ResponseT <$> parseNames)
 
---TODO: implement new parsing model
--- resources/items/sku/p{itemId}s/expirations?store={retailStoreId}&b={b}
 parseUrlBuilder :: (String -> Maybe MyField) -> Parser UrlBuilder
 parseUrlBuilder search = UrlBuilder <$> lexeme (parseUrlParts search) <*> (parseUrlQueryParts search) 
 
@@ -87,7 +85,10 @@ parseUrlParts :: (String -> Maybe MyField) -> Parser [UrlPart]
 parseUrlParts search = (sepBy (parseUrlPart search) (char '/'))
 
 parseUrlPart :: (String -> Maybe MyField) -> Parser UrlPart
-parseUrlPart search = do
+parseUrlPart search = parseUrlSection search (\p f s-> UrlPartVar $ UrlField p f s) (UrlPartLit)
+
+parseUrlSection :: (String -> Maybe MyField) -> (String -> MyField -> String -> b) -> (String -> b) -> Parser b
+parseUrlSection search createVar createLiteral = do
     urlSection <- many parseUrlNameChar
     let beginPosMaybe = elemIndex '{' urlSection
     case beginPosMaybe of
@@ -102,10 +103,10 @@ parseUrlPart search = do
                             let suffix = drop (endPos + 1)  urlSection
                             case search fieldName of
                                 Just field -> 
-                                    return $ UrlPartVar $ UrlField prefix field suffix
+                                    return $ createVar prefix field suffix
                                 Nothing -> fail $ "Unknow field with name (" ++ fieldName ++ ")"
                     Nothing -> fail $ "Is missing a ending }" 
-        Nothing -> return $ UrlPartLit urlSection
+        Nothing -> return $ createLiteral urlSection
 
 parseUrlNameChar :: Parser Char
 parseUrlNameChar = letter <|> digit <|> char '-' <|> char '{' <|> char '}'  <|> char ':'
@@ -120,25 +121,7 @@ parseUrlQueryPart search = do
     parseUrlQueryPartName search n
 
 parseUrlQueryPartName :: (String -> Maybe MyField) -> String -> Parser UrlQueryPart
-parseUrlQueryPartName search n = do
-    urlSection <- many parseUrlNameChar
-    let beginPosMaybe = elemIndex '{' urlSection
-    case beginPosMaybe of
-        Just beginPos -> 
-            do
-                let endPosMaybe = elemIndex '}' urlSection
-                case endPosMaybe of
-                    Just endPos -> 
-                        do
-                            let prefix = take beginPos urlSection
-                            let fieldName =  take (endPos - beginPos - 1) $ drop (beginPos+1) urlSection
-                            let suffix = drop (endPos + 1)  urlSection
-                            case search fieldName of
-                                Just field -> 
-                                    return $ mkUrlQueryPartVar n prefix field suffix
-                                Nothing -> fail $ "Unknow field with name (" ++ fieldName ++ ")"
-                    Nothing -> fail $ "Is missing a ending }" 
-        Nothing -> return $ mkUrlQueryPartLiteral n urlSection
+parseUrlQueryPartName search n = parseUrlSection search (mkUrlQueryPartVar n) (mkUrlQueryPartLiteral n)
 
 parseQueryPartName :: Parser String
 parseQueryPartName = many1 (letter <|> digit <|> char '-' <|> char '_')
