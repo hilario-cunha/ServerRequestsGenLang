@@ -60,13 +60,13 @@ data UrlPart    = UrlPartLit String
                 | UrlPartVar UrlField
     deriving Show
 
-data UrlQueryPartValue = UrlQueryPartLit String | UrlQueryPartVar MyField
+data UrlQueryPartValue = UrlQueryPartLit String | UrlQueryPartVar UrlField
     deriving Show
 data UrlQueryPart = UrlQueryPart String UrlQueryPartValue
     deriving Show
 
-mkUrlQueryPartVar :: String -> MyField -> UrlQueryPart
-mkUrlQueryPartVar n field = UrlQueryPart n $ UrlQueryPartVar field
+mkUrlQueryPartVar :: String -> String -> MyField -> String -> UrlQueryPart
+mkUrlQueryPartVar n prefix field suffix = UrlQueryPart n $ UrlQueryPartVar $ UrlField prefix field suffix
 
 mkUrlQueryPartLiteral :: String -> String -> UrlQueryPart
 mkUrlQueryPartLiteral n literal = UrlQueryPart n $ UrlQueryPartLit literal
@@ -176,24 +176,25 @@ mkUrlBuilder (UrlBuilder parts queryParts) =
         var n t args = mkAndInitLocalVar n $ mkNew t args 
 
         urlPartAsArgument (UrlPartLit l) = mkLiteralStringArgument l
-        urlPartAsArgument (UrlPartVar (UrlField prefix (IntField n) suffix)) = mkSimpleNameArgument (addPrefix prefix ++ n ++ addSuffix suffix)
-        urlPartAsArgument (UrlPartVar (UrlField prefix (StringField n) suffix)) = mkSimpleNameArgument (addPrefix prefix ++ n ++ addSuffix suffix)
-        urlPartAsArgument (UrlPartVar (UrlField prefix (StringNotEmptyField n) suffix)) = mkSimpleNameArgument (addPrefix prefix ++ (n ++ ".Value") ++ addSuffix suffix)
+        urlPartAsArgument (UrlPartVar (UrlField prefix (IntField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix (n ++ ".ToString()")
+        urlPartAsArgument (UrlPartVar (UrlField prefix (StringField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix n
+        urlPartAsArgument (UrlPartVar (UrlField prefix (StringNotEmptyField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix (n ++ ".Value")
         urlPartAsArgument (UrlPartVar (UrlField prefix (StringNotEmptyArrayField n) suffix)) = error "StringNotEmptyArrayField Not supported in url part"
-        urlPartAsArgument (UrlPartVar (UrlField prefix (DateTimeField n) suffix)) = mkSimpleNameArgument (addPrefix prefix ++ ("HttpUtils.DateTimeZoneHandlingUtcIso8601(" ++ n ++ ")") ++ addSuffix suffix)
-        urlPartAsArgument (UrlPartVar (UrlField prefix (DateTimeNullableField n) suffix)) = mkSimpleNameArgument (addPrefix prefix ++ n ++ addSuffix suffix)
+        urlPartAsArgument (UrlPartVar (UrlField prefix (DateTimeField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix ("HttpUtils.DateTimeZoneHandlingUtcIso8601(" ++ n ++ ")")
+        urlPartAsArgument (UrlPartVar (UrlField prefix (DateTimeNullableField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix n
         urlPartAsArgument (UrlPartVar (UrlField prefix (CustomField t n) suffix)) = error "CustomField Not supported in url part"
 
+        addPrefixAndSuffixAsArgument prefix suffix n = mkSimpleNameArgument $ addPrefix prefix ++ n ++ addSuffix suffix
         addPrefix prefix = if(not $ null prefix) then "\"" ++ prefix ++ "\" + " else []
         addSuffix suffix = if(not $ null suffix) then " + \"" ++ suffix ++ "\"" else []
-
+        
         urlQueryPartValueAsArgument (UrlQueryPartLit v) = mkLiteralStringArgument v
-        urlQueryPartValueAsArgument (UrlQueryPartVar (IntField n)) = mkSimpleNameArgument (n ++ ".ToString()")
-        urlQueryPartValueAsArgument (UrlQueryPartVar (StringField n)) = mkSimpleNameArgument n
-        urlQueryPartValueAsArgument (UrlQueryPartVar (StringNotEmptyField n)) = mkSimpleNameArgument (n ++ ".Value")
-        urlQueryPartValueAsArgument (UrlQueryPartVar (StringNotEmptyArrayField n)) = mkSimpleNameArgument n
-        urlQueryPartValueAsArgument (UrlQueryPartVar (DateTimeField n)) = mkSimpleNameArgument ("HttpUtils.DateTimeZoneHandlingUtcIso8601(" ++ n ++ ")")
-        urlQueryPartValueAsArgument (UrlQueryPartVar (DateTimeNullableField n)) = mkSimpleNameArgument ("HttpUtils.DateTimeZoneHandlingUtcIso8601(" ++ n ++ ".Value)")
-        urlQueryPartValueAsArgument (UrlQueryPartVar (CustomField _ n)) = error "CustomField Not supported in url query part"
+        urlQueryPartValueAsArgument (UrlQueryPartVar (UrlField prefix (IntField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix (n ++ ".ToString()")
+        urlQueryPartValueAsArgument (UrlQueryPartVar (UrlField prefix (StringField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix n
+        urlQueryPartValueAsArgument (UrlQueryPartVar (UrlField prefix (StringNotEmptyField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix (n ++ ".Value")
+        urlQueryPartValueAsArgument (UrlQueryPartVar (UrlField prefix (StringNotEmptyArrayField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix n
+        urlQueryPartValueAsArgument (UrlQueryPartVar (UrlField prefix (DateTimeField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix ("HttpUtils.DateTimeZoneHandlingUtcIso8601(" ++ n ++ ")")
+        urlQueryPartValueAsArgument (UrlQueryPartVar (UrlField prefix (DateTimeNullableField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix ("HttpUtils.DateTimeZoneHandlingUtcIso8601(" ++ n ++ ".Value)")
+        urlQueryPartValueAsArgument (UrlQueryPartVar (UrlField prefix (CustomField _ n) suffix)) = error "CustomField Not supported in url query part"
 
         urlQueryPartAsArgument (UrlQueryPart n v) = mkNewArgument "UrlQueryParameter" $ [mkLiteralStringArgument n, urlQueryPartValueAsArgument v]
