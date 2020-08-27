@@ -4,5 +4,5 @@ m TryToGetTasksInstoreAdapterRequest [TasksInstoreAdapterResponse] [Int offset, 
 tasks?adapter=instore-adapter&offset={offset}&limit={limit}&store={retailStoreId}&status={status}&type={typesOfTasks}&search={search}&parent={parentTaskId}&from_scheduled_start={fromScheduledStart}&to_scheduled_start={toScheduledStart}
 m TryToGetTasksSummaryRequest TasksSummaryResponse [String retailStoreId, StringNotEmptyArray status, DateTimeNullable fromScheduledStart, DateTimeNullable toScheduledStart]
 tasks-summary?store={retailStoreId}&status={status}&from_scheduled_start={fromScheduledStart}&to_scheduled_start={toScheduledStart}
-p TryToGetCreateTaskRequest Response<CreateTaskResponse> [] CreateTaskRequestToSend
+p TryToGetCreateTaskRequest CreateTaskResponse [] CreateTaskRequestToSend
 tasks

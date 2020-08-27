@@ -1,3 +1,3 @@
 f Expirations
-p TryToGetDeleteFutureDatesRequest Response [String itemId] FutureDatesToDeleteDto
+p TryToGetDeleteFutureDatesRequest () [String itemId] FutureDatesToDeleteDto
 expirations/{itemId}:deletebatch

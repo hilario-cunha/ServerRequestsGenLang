@@ -75,7 +75,7 @@ parseMyField = do
         _ -> CustomField fieldType <$> (lexeme parseNames)
 
 parseResponseT :: Parser ResponseT
-parseResponseT = (ResponseTArray <$> betweenBrackets parseNames) <|> (ResponseT <$> parseNames)
+parseResponseT = ((char '(') *> (char ')') *> return Response) <|> (ResponseTArray <$> betweenBrackets parseNames) <|> (ResponseT <$> parseNames)
 
 parseUrlBuilder :: (String -> Maybe MyField) -> Parser UrlBuilder
 parseUrlBuilder search = UrlBuilder <$> lexeme (parseUrlParts search) <*> (parseUrlQueryParts search) 

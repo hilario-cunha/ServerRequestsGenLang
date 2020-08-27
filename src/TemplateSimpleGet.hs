@@ -15,6 +15,7 @@ import Language.CSharp.Pretty
 import Gen
 import CSharpGen
 import UrlBuilder
+import Data.Maybe (fromJust)
 
 data MyField= IntField String
             | StringField String
@@ -28,7 +29,8 @@ data MyField= IntField String
 data TemplateSimpleGet = TemplateSimpleGet [String] String [MethodTryTo]
     deriving Show
 
-data ResponseT  = ResponseT String
+data ResponseT  = Response
+                | ResponseT String
                 | ResponseTArray String
                 deriving Show
 
@@ -107,44 +109,36 @@ createTemplateSimpleGet (TemplateSimpleGet extraUsings functionalityName methods
         usingsAux = ("Tlantic.Server.Core" : "System" : extraUsings)
         namespace = ("Tlantic.Server." ++ functionalityName)
         cn = functionalityName ++ "ServerRequests"
-        mkTemplateSimpleMethod (MethodTryToGet mi@(MethodInfo mn responseT _) u) = mkTemplateSimpleGetMethod mi callUrlBuilderMethod callTryToGet
+
+        mkReturnType iChoiceType responseT = mkTypeNamedWithTypeArguments iChoiceType [mkResponseTA responseT, TypeArgument (mkTypeNamed "NetworkError")]
+        mkIChoiceGetRequestWithRetryType = mkReturnType "IChoiceGetRequestWithRetry" 
+        mkIChoicePostRequestWithRetryType = mkReturnType "IChoicePostRequestWithRetry"
+
+        mkTemplateSimpleMethod (MethodTryToGet (MethodInfo methodName responseT args) u) = 
+            mkMethodMemberDeclaration [Public] (mkIChoiceGetRequestWithRetryType responseT) methodName (mkArgs args) [callUrlBuilderMethod, callTryToGet]
             where 
-                ulrBuilderMethod = UlrBuilderMethod ("CreateUrlBuilder" ++ mn) u
+                ulrBuilderMethod = UlrBuilderMethod ("CreateUrlBuilder" ++ methodName) u
                 callUrlBuilderMethod = callUrlBuilder ulrBuilderMethod
-                innerResponseTA = mkInnerResponseTA responseT
+
+                innerResponseTA = fromJust $ mkInnerResponseTA responseT
                 callTryToGet = mkReturn $ callMethodFromServerConfig "TryToGet" [innerResponseTA] [mkSimpleNameArgument "urlBuilder"]
-        mkTemplateSimpleMethod (MethodTryToPost mi@(MethodInfo mn responseT _) dataT u) = mkTemplateSimplePostMethod mi dataT callUrlBuilderMethod callTryToPost
+
+        mkTemplateSimpleMethod (MethodTryToPost (MethodInfo methodName responseT args) dataT u) = 
+            mkMethodMemberDeclaration [Public] (mkIChoicePostRequestWithRetryType responseT) methodName (mkArgs (args ++ [CustomField dataT "data"])) [callUrlBuilderMethod, callTryToPost]
             where 
-                ulrBuilderMethod = UlrBuilderMethod ("CreateUrlBuilder" ++ mn) u
+                ulrBuilderMethod = UlrBuilderMethod ("CreateUrlBuilder" ++ methodName) u
                 callUrlBuilderMethod = callUrlBuilder ulrBuilderMethod
-                callTryToPost = mkReturn $ callMethodFromServerConfig "TryToPost" [(mkTypeNamedTypeArgument dataT), innerResponseTA] [mkSimpleNameArgument "urlBuilder", mkSimpleNameArgument "data"]
-                innerResponseTA = mkInnerResponseTA responseT
 
-mkTemplateSimpleGetMethod :: MethodInfo -> Statement -> Statement -> MemberDeclaration
-mkTemplateSimpleGetMethod (MethodInfo methodName responseT args) callUrlBuilderMethod callTryToGet = 
-    mkMethodMemberDeclaration [Public] returnType methodName methodArgs [callUrlBuilderMethod, callTryToGet]
-    where 
-        returnType = mkTypeNamedWithTypeArguments "IChoiceGetRequestWithRetry" [responseTA, networkErrorTA]
-        responseTA = TypeArgument (mkTypeNamedWithTypeArguments "Response" [innerResponseTA])
-        networkErrorTA = TypeArgument  (mkTypeNamed "NetworkError")
-        innerResponseTA = mkInnerResponseTA responseT
-        
-        methodArgs = (mkArgs args)
-        
-mkTemplateSimplePostMethod :: MethodInfo -> String -> Statement -> Statement -> MemberDeclaration
-mkTemplateSimplePostMethod (MethodInfo methodName responseT args) dataT callUrlBuilderMethod callTryToPostMethod = 
-    mkMethodMemberDeclaration [Public] returnType methodName methodArgs [callUrlBuilderMethod, callTryToPostMethod]
-    where 
-        returnType = (mkTypeNamedWithTypeArguments "IChoicePostRequestWithRetry" [responseTA, networkErrorTA])
-        responseTA = innerResponseTA
-        innerResponseTA = mkInnerResponseTA responseT
-        networkErrorTA = TypeArgument  (mkTypeNamed "NetworkError")
+                callTryToPost = mkReturn $ callMethodFromServerConfig "TryToPost" [(mkTypeNamedTypeArgument dataT), mkResponseTA responseT] [mkSimpleNameArgument "urlBuilder", mkSimpleNameArgument "data"]
 
-        methodArgs = mkArgs (args ++ [CustomField dataT "data"])
 
-mkInnerResponseTA :: ResponseT -> TypeArgument
-mkInnerResponseTA (ResponseT t) = mkTypeNamedTypeArgument t
-mkInnerResponseTA (ResponseTArray t) = mkTypeArrayTypeArgument t
+mkResponseTA :: ResponseT -> TypeArgument
+mkResponseTA responseT = maybe (mkTypeNamedTypeArgument "Response") (\innerResponseTA -> TypeArgument (mkTypeNamedWithTypeArguments "Response" [innerResponseTA])) $ mkInnerResponseTA responseT
+
+mkInnerResponseTA :: ResponseT -> Maybe TypeArgument
+mkInnerResponseTA (Response) = Nothing
+mkInnerResponseTA (ResponseT t) = Just $ mkTypeNamedTypeArgument t
+mkInnerResponseTA (ResponseTArray t) = Just $ mkTypeArrayTypeArgument t
 
 mkTemplateSimpleGetClass :: ClassWithMethods -> Declaration
 mkTemplateSimpleGetClass classWithMethods = 

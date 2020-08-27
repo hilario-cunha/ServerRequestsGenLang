@@ -16,5 +16,5 @@ m TryToGetOtherStoresStockRequest [OtherStoresStockServerResponse] [StringNotEmp
 products/{itemId}/stock/chain/{chainValue}
 m TryToGetWithdrawalExternalInfoRequest WithdrawalExternalInfo [String itemId, DateTime expirationDate, StringNotEmpty retailStoreId]
 products/{itemId}/expirations/quantities?store={retailStoreId}&date={expirationDate}
-p TryToGetSendFutureValiditiesRequest Response [StringNotEmpty itemId] SendFutureValiditiesRequestToSend
+p TryToGetSendFutureValiditiesRequest () [StringNotEmpty itemId] SendFutureValiditiesRequestToSend
 products/{itemId}/validities
