@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fe95c32e548cdb9aa5e4a14c9bcef14eb8f1479bd7820a3a213fbfe736e68b1c
+-- hash: 53fe9778a398f49b6cc617871f9f3677679bc404cb45e650a6a4c4ee207d5a68
 
 name:           ServerRequestsGenLang
 version:        0.1.0.0
@@ -32,6 +32,7 @@ library
       Parsing
       ParsingUtils
       TemplateSimpleGet
+      UrlBuilder
   other-modules:
       Paths_ServerRequestsGenLang
   hs-source-dirs:

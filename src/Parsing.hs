@@ -4,11 +4,10 @@ module Parsing
     ) where
 
 import Text.ParserCombinators.Parsec
--- import Data.Functor (void)
--- import Control.Applicative hiding ((<|>), optional, many)
 import ParsingUtils
 import TemplateSimpleGet
 import Data.List(elemIndex)
+import UrlBuilder
 
 parseReadOrThrow :: String -> String -> Either String TemplateSimpleGet
 parseReadOrThrow description = readOrThrow description parseTemplateSimpleGet
@@ -28,7 +27,7 @@ parseFunctionalityName :: Parser String
 parseFunctionalityName = char 'f' *> (lexeme parseNames) <* spaces
 
 parseMethodsTryTo :: Parser [MethodTryTo]
-parseMethodsTryTo = many1 parseMethodTryTo
+parseMethodsTryTo = manyTill parseMethodTryTo eof
 
 searchField :: [MyField] -> String -> Maybe MyField
 searchField fields fieldName = case filter (\f -> fieldName == extractNameFromMyField f) fields of
@@ -85,10 +84,19 @@ parseUrlParts :: (String -> Maybe MyField) -> Parser [UrlPart]
 parseUrlParts search = (sepBy (parseUrlPart search) (char '/'))
 
 parseUrlPart :: (String -> Maybe MyField) -> Parser UrlPart
-parseUrlPart search = parseUrlSection search (\p f s-> UrlPartVar $ UrlField p f s) (UrlPartLit)
+parseUrlPart search = parseUrlSection search UrlPartLit fromMyFieldToUrlPartField UrlPartVar
 
-parseUrlSection :: (String -> Maybe MyField) -> (String -> MyField -> String -> b) -> (String -> b) -> Parser b
-parseUrlSection search createVar createLiteral = do
+fromMyFieldToUrlPartField :: MyField -> Parser UrlPartField
+fromMyFieldToUrlPartField (IntField n) = return $ IntPartField n
+fromMyFieldToUrlPartField (StringField n) = return $ StringPartField n
+fromMyFieldToUrlPartField (StringNotEmptyField n) = return $ StringNotEmptyPartField n
+fromMyFieldToUrlPartField (DateTimeField n) = return $ DateTimePartField n
+fromMyFieldToUrlPartField (DateTimeNullableField n) = return $ DateTimeNullablePartField n
+fromMyFieldToUrlPartField (StringNotEmptyArrayField _) = fail "StringNotEmptyArrayField Not supported in url part"
+fromMyFieldToUrlPartField (CustomField n _) = fail $ "CustomField " ++ n ++ "not supported in url part"
+
+parseUrlSection :: (String -> Maybe MyField) -> (String -> b) -> (MyField -> Parser a) -> (String -> a -> String -> b) -> Parser b
+parseUrlSection search createLiteral fromMyField  createVar = do
     urlSection <- many parseUrlNameChar
     let beginPosMaybe = elemIndex '{' urlSection
     case beginPosMaybe of
@@ -103,7 +111,9 @@ parseUrlSection search createVar createLiteral = do
                             let suffix = drop (endPos + 1)  urlSection
                             case search fieldName of
                                 Just field -> 
-                                    return $ createVar prefix field suffix
+                                    do
+                                        p <- fromMyField field
+                                        return $ createVar prefix p suffix
                                 Nothing -> fail $ "Unknow field with name (" ++ fieldName ++ ")"
                     Nothing -> fail $ "Is missing a ending }" 
         Nothing -> return $ createLiteral urlSection
@@ -121,7 +131,16 @@ parseUrlQueryPart search = do
     parseUrlQueryPartName search n
 
 parseUrlQueryPartName :: (String -> Maybe MyField) -> String -> Parser UrlQueryPart
-parseUrlQueryPartName search n = parseUrlSection search (mkUrlQueryPartVar n) (mkUrlQueryPartLiteral n)
+parseUrlQueryPartName search n = parseUrlSection search (\v -> UrlQueryPart n $ UrlQueryPartLit v) fromMyFieldToUrlQueryPartField (\p f s-> UrlQueryPart n $ UrlQueryPartVar p f s) 
+
+fromMyFieldToUrlQueryPartField :: MyField -> Parser UrlQueryPartField
+fromMyFieldToUrlQueryPartField (IntField n) = return $ IntQueryPartField n
+fromMyFieldToUrlQueryPartField (StringField n) = return $ StringQueryPartField n
+fromMyFieldToUrlQueryPartField (StringNotEmptyField n) = return $ StringNotEmptyQueryPartField n
+fromMyFieldToUrlQueryPartField (StringNotEmptyArrayField n) = return $ StringNotEmptyArrayQueryPartField n
+fromMyFieldToUrlQueryPartField (DateTimeField n) = return $ DateTimeQueryPartField n
+fromMyFieldToUrlQueryPartField (DateTimeNullableField n) = return $ DateTimeNullableQueryPartField n
+fromMyFieldToUrlQueryPartField (CustomField n _) = fail $ "CustomField " ++ n ++ " not supported in url query part"
 
 parseQueryPartName :: Parser String
 parseQueryPartName = many1 (letter <|> digit <|> char '-' <|> char '_')
