@@ -12,7 +12,7 @@ namespace Tlantic.Server.HierarchicalStructure
         public IChoiceGetRequestWithRetry<Response<HierarchicalStructureEntry[]>,NetworkError> TryToGetHierarchicalStructureRequest(string rootHsId)
         {
             var urlBuilder = CreateUrlBuilderTryToGetHierarchicalStructureRequest(rootHsId);
-            return serverConfig.TryToGet<HierarchicalStructureEntry[]>(urlBuilder);
+            return serverConfig.TryToGet<Response<HierarchicalStructureEntry[]>>(urlBuilder);
         }
         public UrlBuilder CreateUrlBuilderTryToGetHierarchicalStructureRequest(string rootHsId)
         {

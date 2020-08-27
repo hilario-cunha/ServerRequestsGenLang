@@ -12,7 +12,7 @@ namespace Tlantic.Server.Checklists
         public IChoiceGetRequestWithRetry<Response<ChecklistEntryResponse[]>,NetworkError> TryToGetChecklistsRequest()
         {
             var urlBuilder = CreateUrlBuilderTryToGetChecklistsRequest();
-            return serverConfig.TryToGet<ChecklistEntryResponse[]>(urlBuilder);
+            return serverConfig.TryToGet<Response<ChecklistEntryResponse[]>>(urlBuilder);
         }
         public UrlBuilder CreateUrlBuilderTryToGetChecklistsRequest()
         {

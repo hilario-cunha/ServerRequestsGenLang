@@ -4,6 +4,7 @@ module TemplateSimpleGet
     , MethodInfo(..)
     , MethodTryTo(..)
     , MyField(..)
+    , MethodAction(..)
     , mkFormalParamMyField
     , ResponseT(..)
     , extractNameFromMyField
@@ -15,7 +16,6 @@ import Language.CSharp.Pretty
 import Gen
 import CSharpGen
 import UrlBuilder
-import Data.Maybe (fromJust)
 
 data MyField= IntField String
             | StringField String
@@ -39,9 +39,11 @@ type MethodName = String
 data MethodInfo = MethodInfo MethodName ResponseT [MyField]
     deriving Show
 
-data MethodTryTo= MethodTryToGet MethodInfo UrlBuilder
-                | MethodTryToPost MethodInfo String UrlBuilder
-                deriving Show
+data MethodAction = MethodActionGet | MethodActionPost String
+    deriving Show
+
+data MethodTryTo = MethodTryTo MethodAction MethodInfo UrlBuilder
+    deriving Show
 
 extractNameFromMyField :: MyField -> String
 extractNameFromMyField (IntField n) = n
@@ -80,8 +82,8 @@ mkCu = mkNamespaceWithClass mkTemplateSimpleGetClass
 createAndWriteToFile :: Pretty a => FilePath -> a -> IO ()
 createAndWriteToFile fileName cu  = writeFile fileName $ prettyPrint cu      
     
-callMethodFromServerConfig :: String -> [TypeArgument] -> [Argument] -> Expression
-callMethodFromServerConfig methodName typeArguments  = Invocation $ MemberAccess $ mkPrimaryMemberAccessWithTypeArguments (mkSimpleName "serverConfig") methodName typeArguments 
+serverConfigDot :: String -> [TypeArgument] -> [Argument] -> Expression
+serverConfigDot methodName typeArguments  = Invocation $ MemberAccess $ mkPrimaryMemberAccessWithTypeArguments (mkSimpleName "serverConfig") methodName typeArguments 
 
 generateUrlBuilderMethods :: [UlrBuilderMethod] -> [MemberDeclaration]
 generateUrlBuilderMethods urlBuilderMethods = map generateUlrBuilderMethod urlBuilderMethods
@@ -97,11 +99,10 @@ createTemplateSimpleGet (TemplateSimpleGet extraUsings functionalityName methods
         (createClassWithMethods 
             cn
             (mkTemplateSimpleGetCtor cn)
-            ((map mkTemplateSimpleMethod methodsTryTo) ++ urlBuilderMethods)
+            ((mkTemplateSimpleMethods methodsTryTo) ++ urlBuilderMethods)
         )
     where 
-        extractUrlBuilderMethod (MethodTryToGet (MethodInfo methodName _ _) urlBuilder) = UlrBuilderMethod ("CreateUrlBuilder" ++ methodName) urlBuilder
-        extractUrlBuilderMethod (MethodTryToPost (MethodInfo methodName _ _) _ urlBuilder) = UlrBuilderMethod ("CreateUrlBuilder" ++ methodName) urlBuilder
+        extractUrlBuilderMethod (MethodTryTo _ (MethodInfo methodName _ _) urlBuilder) = UlrBuilderMethod ("CreateUrlBuilder" ++ methodName) urlBuilder
         
         extractUrlBuilderMethods = map extractUrlBuilderMethod methodsTryTo
         urlBuilderMethods = generateUrlBuilderMethods extractUrlBuilderMethods
@@ -110,28 +111,32 @@ createTemplateSimpleGet (TemplateSimpleGet extraUsings functionalityName methods
         namespace = ("Tlantic.Server." ++ functionalityName)
         cn = functionalityName ++ "ServerRequests"
 
-        mkReturnType iChoiceType responseT = mkTypeNamedWithTypeArguments iChoiceType [mkResponseTA responseT, TypeArgument (mkTypeNamed "NetworkError")]
-        mkIChoiceGetRequestWithRetryType = mkReturnType "IChoiceGetRequestWithRetry" 
-        mkIChoicePostRequestWithRetryType = mkReturnType "IChoicePostRequestWithRetry"
+mkTemplateSimpleMethods :: [MethodTryTo] -> [MemberDeclaration]
+mkTemplateSimpleMethods = map mkTemplateSimpleMethod
 
-        mkTemplateSimpleMethod (MethodTryToGet (MethodInfo methodName responseT args) u) = 
-            mkMethodMemberDeclaration [Public] (mkIChoiceGetRequestWithRetryType responseT) methodName (mkArgs args) [callUrlBuilderMethod, callTryToGet]
-            where 
-                ulrBuilderMethod = UlrBuilderMethod ("CreateUrlBuilder" ++ methodName) u
-                callUrlBuilderMethod = callUrlBuilder ulrBuilderMethod
+mkTemplateSimpleMethod :: MethodTryTo -> MemberDeclaration
+mkTemplateSimpleMethod (MethodTryTo methodAction (MethodInfo methodName responseT args) u) = 
+    mkMethodMemberDeclaration [Public] returnType methodName (mkArgs args) body
+    where 
+        responseTA = mkResponseTA responseT
+        
+        returnType = (mkIChoice methodAction)
+        mkIChoice (MethodActionGet) = mkReturnType "IChoiceGetRequestWithRetry"
+        mkIChoice (MethodActionPost _) = mkReturnType "IChoicePostRequestWithRetry"
+        mkReturnType iChoiceType = mkTypeNamedWithTypeArguments iChoiceType [responseTA, TypeArgument (mkTypeNamed "NetworkError")]
+        
+        body = 
+            [ callUrlBuilder $ UlrBuilderMethod ("CreateUrlBuilder" ++ methodName) u
+            , callMethodAction methodAction
+            ]
+        
+        -- return serverConfig.TryToGet<Response<BarcodeRule[]>>(urlBuilder);
+        callMethodAction (MethodActionGet) =  mkReturn $ serverConfigDot "TryToGet" [responseTA] [mkSimpleNameArgument "urlBuilder"]
+        -- return serverConfig.TryToPost<SendFutureValiditiesRequestToSend,Response>(urlBuilder,data);
+        callMethodAction (MethodActionPost dataT) =  mkReturn $ serverConfigDot "TryToPost" [(mkTypeNamedTypeArgument dataT), responseTA] [mkSimpleNameArgument "urlBuilder", mkSimpleNameArgument "data"]
 
-                innerResponseTA = fromJust $ mkInnerResponseTA responseT
-                callTryToGet = mkReturn $ callMethodFromServerConfig "TryToGet" [innerResponseTA] [mkSimpleNameArgument "urlBuilder"]
 
-        mkTemplateSimpleMethod (MethodTryToPost (MethodInfo methodName responseT args) dataT u) = 
-            mkMethodMemberDeclaration [Public] (mkIChoicePostRequestWithRetryType responseT) methodName (mkArgs (args ++ [CustomField dataT "data"])) [callUrlBuilderMethod, callTryToPost]
-            where 
-                ulrBuilderMethod = UlrBuilderMethod ("CreateUrlBuilder" ++ methodName) u
-                callUrlBuilderMethod = callUrlBuilder ulrBuilderMethod
-
-                callTryToPost = mkReturn $ callMethodFromServerConfig "TryToPost" [(mkTypeNamedTypeArgument dataT), mkResponseTA responseT] [mkSimpleNameArgument "urlBuilder", mkSimpleNameArgument "data"]
-
-
+        
 mkResponseTA :: ResponseT -> TypeArgument
 mkResponseTA responseT = maybe (mkTypeNamedTypeArgument "Response") (\innerResponseTA -> TypeArgument (mkTypeNamedWithTypeArguments "Response" [innerResponseTA])) $ mkInnerResponseTA responseT
 

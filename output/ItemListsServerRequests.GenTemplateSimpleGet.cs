@@ -12,7 +12,7 @@ namespace Tlantic.Server.ItemLists
         public IChoiceGetRequestWithRetry<Response<ItemListEntryResponse[]>,NetworkError> TryToGetItemListsRequest()
         {
             var urlBuilder = CreateUrlBuilderTryToGetItemListsRequest();
-            return serverConfig.TryToGet<ItemListEntryResponse[]>(urlBuilder);
+            return serverConfig.TryToGet<Response<ItemListEntryResponse[]>>(urlBuilder);
         }
         public UrlBuilder CreateUrlBuilderTryToGetItemListsRequest()
         {

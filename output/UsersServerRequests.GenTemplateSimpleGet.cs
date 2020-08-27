@@ -13,12 +13,12 @@ namespace Tlantic.Server.Users
         public IChoiceGetRequestWithRetry<Response<UserInfo>,NetworkError> TryToGetUserInfo()
         {
             var urlBuilder = CreateUrlBuilderTryToGetUserInfo();
-            return serverConfig.TryToGet<UserInfo>(urlBuilder);
+            return serverConfig.TryToGet<Response<UserInfo>>(urlBuilder);
         }
         public IChoiceGetRequestWithRetry<Response<List<Store>>,NetworkError> TryToGetUserStoresRequest()
         {
             var urlBuilder = CreateUrlBuilderTryToGetUserStoresRequest();
-            return serverConfig.TryToGet<List<Store>>(urlBuilder);
+            return serverConfig.TryToGet<Response<List<Store>>>(urlBuilder);
         }
         public UrlBuilder CreateUrlBuilderTryToGetUserInfo()
         {

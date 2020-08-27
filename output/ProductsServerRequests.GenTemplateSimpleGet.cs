@@ -13,42 +13,42 @@ namespace Tlantic.Server.Products
         public IChoiceGetRequestWithRetry<Response<ExpirationsItemParameters>,NetworkError> TryToGetExpirationsItemParametersRequest(string itemId,StringNotEmpty retailStoreId)
         {
             var urlBuilder = CreateUrlBuilderTryToGetExpirationsItemParametersRequest(itemId,retailStoreId);
-            return serverConfig.TryToGet<ExpirationsItemParameters>(urlBuilder);
+            return serverConfig.TryToGet<Response<ExpirationsItemParameters>>(urlBuilder);
         }
         public IChoiceGetRequestWithRetry<Response<Sales>,NetworkError> TryToGetDailySalesServerRequest(StringNotEmpty retailStoreId,string ean,DateTime date)
         {
             var urlBuilder = CreateUrlBuilderTryToGetDailySalesServerRequest(ean,retailStoreId,date);
-            return serverConfig.TryToGet<Sales>(urlBuilder);
+            return serverConfig.TryToGet<Response<Sales>>(urlBuilder);
         }
         public IChoiceGetRequestWithRetry<Response<DamagesDestinationsResponse[]>,NetworkError> TryToGetDamagesDestinationsRequest(StringNotEmpty retailStoreId)
         {
             var urlBuilder = CreateUrlBuilderTryToGetDamagesDestinationsRequest(retailStoreId);
-            return serverConfig.TryToGet<DamagesDestinationsResponse[]>(urlBuilder);
+            return serverConfig.TryToGet<Response<DamagesDestinationsResponse[]>>(urlBuilder);
         }
         public IChoiceGetRequestWithRetry<Response<DamagesReasonsResponse[]>,NetworkError> TryToGetDamagesReasonsRequest()
         {
             var urlBuilder = CreateUrlBuilderTryToGetDamagesReasonsRequest();
-            return serverConfig.TryToGet<DamagesReasonsResponse[]>(urlBuilder);
+            return serverConfig.TryToGet<Response<DamagesReasonsResponse[]>>(urlBuilder);
         }
         public IChoiceGetRequestWithRetry<Response<PriceValue>,NetworkError> TryToGetExternalPVPRequest(string itemId,StringNotEmpty retailStoreId)
         {
             var urlBuilder = CreateUrlBuilderTryToGetExternalPVPRequest(itemId,retailStoreId);
-            return serverConfig.TryToGet<PriceValue>(urlBuilder);
+            return serverConfig.TryToGet<Response<PriceValue>>(urlBuilder);
         }
         public IChoiceGetRequestWithRetry<Response<PriceResponse[]>,NetworkError> TryToGetPricesRequest(StringNotEmpty retailStoreId,StringNotEmpty itemId,string ean)
         {
             var urlBuilder = CreateUrlBuilderTryToGetPricesRequest(itemId,retailStoreId,ean);
-            return serverConfig.TryToGet<PriceResponse[]>(urlBuilder);
+            return serverConfig.TryToGet<Response<PriceResponse[]>>(urlBuilder);
         }
         public IChoiceGetRequestWithRetry<Response<OtherStoresStockServerResponse[]>,NetworkError> TryToGetOtherStoresStockRequest(StringNotEmpty itemId,StringNotEmpty chainValue)
         {
             var urlBuilder = CreateUrlBuilderTryToGetOtherStoresStockRequest(itemId,chainValue);
-            return serverConfig.TryToGet<OtherStoresStockServerResponse[]>(urlBuilder);
+            return serverConfig.TryToGet<Response<OtherStoresStockServerResponse[]>>(urlBuilder);
         }
         public IChoiceGetRequestWithRetry<Response<WithdrawalExternalInfo>,NetworkError> TryToGetWithdrawalExternalInfoRequest(string itemId,DateTime expirationDate,StringNotEmpty retailStoreId)
         {
             var urlBuilder = CreateUrlBuilderTryToGetWithdrawalExternalInfoRequest(itemId,retailStoreId,expirationDate);
-            return serverConfig.TryToGet<WithdrawalExternalInfo>(urlBuilder);
+            return serverConfig.TryToGet<Response<WithdrawalExternalInfo>>(urlBuilder);
         }
         public IChoicePostRequestWithRetry<Response,NetworkError> TryToGetSendFutureValiditiesRequest(StringNotEmpty itemId,SendFutureValiditiesRequestToSend data)
         {

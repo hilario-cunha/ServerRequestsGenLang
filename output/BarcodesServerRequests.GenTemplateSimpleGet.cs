@@ -12,7 +12,7 @@ namespace Tlantic.Server.Barcodes
         public IChoiceGetRequestWithRetry<Response<BarcodeRule[]>,NetworkError> TryToGetScanCodeRulesRequest()
         {
             var urlBuilder = CreateUrlBuilderTryToGetScanCodeRulesRequest();
-            return serverConfig.TryToGet<BarcodeRule[]>(urlBuilder);
+            return serverConfig.TryToGet<Response<BarcodeRule[]>>(urlBuilder);
         }
         public UrlBuilder CreateUrlBuilderTryToGetScanCodeRulesRequest()
         {

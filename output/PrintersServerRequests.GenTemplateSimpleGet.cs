@@ -13,12 +13,12 @@ namespace Tlantic.Server.Printers
         public IChoiceGetRequestWithRetry<Response<PrinterEntryReponse>,NetworkError> TryToGetPrinterRequest(StringNotEmpty macAddress)
         {
             var urlBuilder = CreateUrlBuilderTryToGetPrinterRequest(macAddress);
-            return serverConfig.TryToGet<PrinterEntryReponse>(urlBuilder);
+            return serverConfig.TryToGet<Response<PrinterEntryReponse>>(urlBuilder);
         }
         public IChoiceGetRequestWithRetry<Response<PrinterEntryReponse[]>,NetworkError> TryToGetPrintersRequest(string retailStoreId)
         {
             var urlBuilder = CreateUrlBuilderTryToGetPrintersRequest(retailStoreId);
-            return serverConfig.TryToGet<PrinterEntryReponse[]>(urlBuilder);
+            return serverConfig.TryToGet<Response<PrinterEntryReponse[]>>(urlBuilder);
         }
         public UrlBuilder CreateUrlBuilderTryToGetPrinterRequest(StringNotEmpty macAddress)
         {

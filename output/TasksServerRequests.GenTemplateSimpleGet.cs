@@ -14,12 +14,12 @@ namespace Tlantic.Server.Tasks
         public IChoiceGetRequestWithRetry<Response<TasksInstoreAdapterResponse[]>,NetworkError> TryToGetTasksInstoreAdapterRequest(int offset,int limit,string retailStoreId,StringNotEmpty[] status,StringNotEmpty[] typesOfTasks,string search,string parentTaskId,DateTime? fromScheduledStart,DateTime? toScheduledStart)
         {
             var urlBuilder = CreateUrlBuilderTryToGetTasksInstoreAdapterRequest(offset,limit,retailStoreId,status,typesOfTasks,search,parentTaskId,fromScheduledStart,toScheduledStart);
-            return serverConfig.TryToGet<TasksInstoreAdapterResponse[]>(urlBuilder);
+            return serverConfig.TryToGet<Response<TasksInstoreAdapterResponse[]>>(urlBuilder);
         }
         public IChoiceGetRequestWithRetry<Response<TasksSummaryResponse>,NetworkError> TryToGetTasksSummaryRequest(string retailStoreId,StringNotEmpty[] status,DateTime? fromScheduledStart,DateTime? toScheduledStart)
         {
             var urlBuilder = CreateUrlBuilderTryToGetTasksSummaryRequest(retailStoreId,status,fromScheduledStart,toScheduledStart);
-            return serverConfig.TryToGet<TasksSummaryResponse>(urlBuilder);
+            return serverConfig.TryToGet<Response<TasksSummaryResponse>>(urlBuilder);
         }
         public IChoicePostRequestWithRetry<Response<CreateTaskResponse>,NetworkError> TryToGetCreateTaskRequest(CreateTaskRequestToSend data)
         {

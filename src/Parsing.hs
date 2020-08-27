@@ -44,7 +44,7 @@ parseMethodTryTo = do
             let fields = extractFieldsFromMethodInfo methodInfo
             urlBuilder <- parseUrlBuilder $ searchField fields
             spaces
-            return $ MethodTryToGet methodInfo urlBuilder
+            return $ MethodTryTo MethodActionGet methodInfo urlBuilder
         'p' -> do
             methodInfo <- parseMethodInfo
             let fields = extractFieldsFromMethodInfo methodInfo
@@ -52,7 +52,7 @@ parseMethodTryTo = do
             spaces
             urlBuilder <- parseUrlBuilder $ searchField fields
             spaces
-            return $ MethodTryToPost methodInfo dataT urlBuilder
+            return $ MethodTryTo (MethodActionPost dataT) methodInfo urlBuilder
         _ -> fail $ "Unknow methodAction (" ++ [methodAction] ++ ")"
         
 parseMethodInfo :: Parser MethodInfo

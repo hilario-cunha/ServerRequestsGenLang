@@ -12,7 +12,7 @@ namespace Tlantic.Server.Documents
         public IChoiceGetRequestWithRetry<Response<DocumentEntryResponse[]>,NetworkError> TryToGetGetAvailableLabelsRequest(string retailStoreId)
         {
             var urlBuilder = CreateUrlBuilderTryToGetGetAvailableLabelsRequest(retailStoreId);
-            return serverConfig.TryToGet<DocumentEntryResponse[]>(urlBuilder);
+            return serverConfig.TryToGet<Response<DocumentEntryResponse[]>>(urlBuilder);
         }
         public UrlBuilder CreateUrlBuilderTryToGetGetAvailableLabelsRequest(string retailStoreId)
         {
