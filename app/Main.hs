@@ -1,6 +1,5 @@
 module Main where
 
-import Language.CSharp.Parser
 import Language.CSharp.Lexer
 import Parsing
 import TemplateSimpleGet
@@ -10,7 +9,9 @@ main =
     generate
 -- main = print $ parser "ex" l
 
+l :: [Positioned Token]
 l = lexer c
+c :: String
 c= "using Tlantic.Server.Core;\
 \namespace Tlantic.Server.Barcodes\
 \{\

@@ -23,9 +23,19 @@ dependencies:
 - base >= 4.7 && < 5
 - language-csharp
 - parsec ^>= 3.1.14.0 && < 3.2
+
+ghc-options:
+  - -Wall
+  - -Wcompat
+  - -Widentities
+  - -Wincomplete-record-updates
+  - -Wincomplete-uni-patterns
+  - -Wpartial-fields
+  - -Wredundant-constraints
+
 library:
   source-dirs: src
-
+  
 executables:
   ServerRequestsGenLang-exe:
     main:                Main.hs

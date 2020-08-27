@@ -40,6 +40,7 @@ extractNameFromMyField (DateTimeField n) = n
 extractNameFromMyField (DateTimeNullableField n) = n
 extractNameFromMyField (CustomField _ n) = n
 
+mkFormalParamMyField :: MyField -> FormalParam
 mkFormalParamMyField (IntField n) = mkFormalParam "int" n
 mkFormalParamMyField (StringField n) = mkFormalParam "string" n
 mkFormalParamMyField (StringNotEmptyField n) = mkFormalParam "StringNotEmpty" n
@@ -48,7 +49,7 @@ mkFormalParamMyField (DateTimeField n) = mkFormalParam "DateTime" n
 mkFormalParamMyField (DateTimeNullableField n) = mkFormalParam "DateTime?" n
 mkFormalParamMyField (CustomField t n) = mkFormalParam t n
 
-
+mkArgs :: [MyField] -> [FormalParam]
 mkArgs fields = map mkFormalParamMyField fields
 
 data TemplateSimpleGet = TemplateSimpleGet [String] String [MethodTryTo]
@@ -91,6 +92,7 @@ data MethodTryTo= MethodTryToGet MethodInfo UrlBuilder
                 | MethodTryToPost MethodInfo String UrlBuilder
                 deriving Show
 
+createAndWriteToFileTemplateSimpleGet :: TemplateSimpleGet -> IO ()
 createAndWriteToFileTemplateSimpleGet templateData  = 
     let 
         createServerRequestsFile = createTemplateSimpleGet templateData
@@ -98,12 +100,15 @@ createAndWriteToFileTemplateSimpleGet templateData  =
         cu = mkCu createServerRequestsFile
     in createAndWriteToFile fileName cu
 
+mkCu :: NamespaceWithClass -> CompilationUnit
 mkCu = mkNamespaceWithClass mkTemplateSimpleGetClass
+createAndWriteToFile :: Pretty a => FilePath -> a -> IO ()
 createAndWriteToFile fileName cu  = writeFile fileName $ prettyPrint cu      
     
+createTemplateSimpleGet :: TemplateSimpleGet -> NamespaceWithClass
 createTemplateSimpleGet (TemplateSimpleGet extraUsings functionalityName methodsTryTo) = 
     createNamespaceWithClass
-        usings 
+        usingsAux 
         namespace
         (createClassWithMethods 
             cn
@@ -111,18 +116,20 @@ createTemplateSimpleGet (TemplateSimpleGet extraUsings functionalityName methods
             (map mkTemplateSimpleMethod methodsTryTo)
         )
     where 
-        usings = ("Tlantic.Server.Core" : "System" : extraUsings)
+        usingsAux = ("Tlantic.Server.Core" : "System" : extraUsings)
         namespace = ("Tlantic.Server." ++ functionalityName)
         cn = functionalityName ++ "ServerRequests"
         mkTemplateSimpleMethod (MethodTryToGet mi u) = mkTemplateSimpleGetMethod mi u
         mkTemplateSimpleMethod (MethodTryToPost mi dataT u) = mkTemplateSimplePostMethod mi dataT u
 
+mkTemplateSimpleGetMethodBody :: UrlBuilder -> TypeArgument -> [Statement]
 mkTemplateSimpleGetMethodBody urlGet innerResponseTA = (mkUrlBuilder urlGet ++ [returnStatement])
     where
         returnStatement = mkReturn $ Invocation tryToGetMemberAccess trytoGetArgs
         trytoGetArgs = [mkSimpleNameArgument "urlBuilder"]
         tryToGetMemberAccess = MemberAccess $ mkPrimaryMemberAccessWithTypeArguments (mkSimpleName "serverConfig") "TryToGet" [innerResponseTA]
 
+mkTemplateSimpleGetMethod :: MethodInfo -> UrlBuilder -> MemberDeclaration
 mkTemplateSimpleGetMethod (MethodInfo methodName responseT args) urlGet = 
     mkMethodMemberDeclaration [Public] returnType methodName (mkArgs args) (mkTemplateSimpleGetMethodBody urlGet innerResponseTA)
     where 
@@ -131,6 +138,7 @@ mkTemplateSimpleGetMethod (MethodInfo methodName responseT args) urlGet =
         networkErrorTA = TypeArgument  (mkTypeNamed "NetworkError")
         innerResponseTA = mkInnerResponseTA responseT
 
+mkTemplateSimplePostMethod :: MethodInfo -> [Char] -> UrlBuilder -> MemberDeclaration
 mkTemplateSimplePostMethod (MethodInfo methodName responseT args) dataT urlGet = mkMethodMemberDeclaration [Public] methodReturnT methodName methodArgs body
     where 
         methodReturnT = (mkTypeNamedWithTypeArguments "IChoicePostRequestWithRetry" [responseTA, networkErrorTA])
@@ -138,30 +146,34 @@ mkTemplateSimplePostMethod (MethodInfo methodName responseT args) dataT urlGet =
         networkErrorTA = TypeArgument  (mkTypeNamed "NetworkError")
 
         methodArgs = mkArgs (args ++ [CustomField dataT "data"])
-        body  = mkTemplateSimplePostMethodBody methodName responseTA dataT args urlGet
-        mkTemplateSimplePostMethodBody methodName responseTTypeArgument dataT args urlGet = (mkUrlBuilder urlGet ++ [ret])
+        body  = mkTemplateSimplePostMethodBody responseTA
+        mkTemplateSimplePostMethodBody responseTTypeArgument = (mkUrlBuilder urlGet ++ [ret])
             where 
                 ret = mkReturnServerConfig "TryToPost" [(mkTypeNamedTypeArgument dataT), responseTTypeArgument] [mkSimpleNameArgument "urlBuilder", mkSimpleNameArgument "data"]
-                mkReturnServerConfig mn tArgs args = Return (Just (Invocation (MemberAccess $ PrimaryMemberAccess (SimpleName (Identifier "serverConfig") [] ) (Identifier mn) tArgs) args))
+                mkReturnServerConfig mn tArgs args1 = Return (Just (Invocation (MemberAccess $ PrimaryMemberAccess (SimpleName (Identifier "serverConfig") [] ) (Identifier mn) tArgs) args1))
 
+mkTemplateSimpleGetClass :: ClassWithMethods -> Declaration
 mkTemplateSimpleGetClass classWithMethods = 
     mkPublicClass cn cb
     where 
         cn = className classWithMethods
         cb = mkTemplateSimpleGetClassBody cn classWithMethods
 
-mkTemplateSimpleGetClassBody ctorName classWithMethods = (mkServerConfigField : ctor : ms)
+mkTemplateSimpleGetClassBody :: [Char] -> ClassWithMethods -> [MemberDeclaration]
+mkTemplateSimpleGetClassBody ctorName classWithMethods = (mkServerConfigField : ctor1 : ms)
     where 
         mkServerConfigField = mkField "ServerConfig" "serverConfig"
-        ctor = mkTemplateSimpleGetCtor ctorName
+        ctor1 = mkTemplateSimpleGetCtor ctorName
         ms = methods classWithMethods
 
+mkTemplateSimpleGetCtor :: String -> MemberDeclaration
 mkTemplateSimpleGetCtor ctorName = mkConstructorMemberDeclaration [Internal] ctorName [serverConfigFormalParam] [serverConfigAssign]
     where
         serverConfigFormalParam = mkFormalParam "ServerConfig" "serverConfig"
         serverConfigAssign = mkAssignStatement "this.serverConfig" "serverConfig"
 
         
+mkInnerResponseTA :: ResponseT -> TypeArgument
 mkInnerResponseTA (ResponseT t) = mkTypeNamedTypeArgument t
 mkInnerResponseTA (ResponseTArray t) = mkTypeArrayTypeArgument t
 
@@ -179,10 +191,10 @@ mkUrlBuilder (UrlBuilder parts queryParts) =
         urlPartAsArgument (UrlPartVar (UrlField prefix (IntField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix (n ++ ".ToString()")
         urlPartAsArgument (UrlPartVar (UrlField prefix (StringField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix n
         urlPartAsArgument (UrlPartVar (UrlField prefix (StringNotEmptyField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix (n ++ ".Value")
-        urlPartAsArgument (UrlPartVar (UrlField prefix (StringNotEmptyArrayField n) suffix)) = error "StringNotEmptyArrayField Not supported in url part"
+        urlPartAsArgument (UrlPartVar (UrlField _ (StringNotEmptyArrayField _) _)) = error "StringNotEmptyArrayField Not supported in url part"
         urlPartAsArgument (UrlPartVar (UrlField prefix (DateTimeField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix ("HttpUtils.DateTimeZoneHandlingUtcIso8601(" ++ n ++ ")")
         urlPartAsArgument (UrlPartVar (UrlField prefix (DateTimeNullableField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix n
-        urlPartAsArgument (UrlPartVar (UrlField prefix (CustomField t n) suffix)) = error "CustomField Not supported in url part"
+        urlPartAsArgument (UrlPartVar (UrlField _ (CustomField _ _) _)) = error "CustomField Not supported in url part"
 
         addPrefixAndSuffixAsArgument prefix suffix n = mkSimpleNameArgument $ addPrefix prefix ++ n ++ addSuffix suffix
         addPrefix prefix = if(not $ null prefix) then "\"" ++ prefix ++ "\" + " else []
@@ -195,6 +207,6 @@ mkUrlBuilder (UrlBuilder parts queryParts) =
         urlQueryPartValueAsArgument (UrlQueryPartVar (UrlField prefix (StringNotEmptyArrayField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix n
         urlQueryPartValueAsArgument (UrlQueryPartVar (UrlField prefix (DateTimeField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix ("HttpUtils.DateTimeZoneHandlingUtcIso8601(" ++ n ++ ")")
         urlQueryPartValueAsArgument (UrlQueryPartVar (UrlField prefix (DateTimeNullableField n) suffix)) = addPrefixAndSuffixAsArgument prefix suffix ("HttpUtils.DateTimeZoneHandlingUtcIso8601(" ++ n ++ ".Value)")
-        urlQueryPartValueAsArgument (UrlQueryPartVar (UrlField prefix (CustomField _ n) suffix)) = error "CustomField Not supported in url query part"
+        urlQueryPartValueAsArgument (UrlQueryPartVar (UrlField _ (CustomField _ _) _)) = error "CustomField Not supported in url query part"
 
         urlQueryPartAsArgument (UrlQueryPart n v) = mkNewArgument "UrlQueryParameter" $ [mkLiteralStringArgument n, urlQueryPartValueAsArgument v]

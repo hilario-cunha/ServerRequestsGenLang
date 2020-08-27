@@ -4,8 +4,8 @@ module Parsing
     ) where
 
 import Text.ParserCombinators.Parsec
-import Data.Functor (void)
-import Control.Applicative hiding ((<|>), optional, many)
+-- import Data.Functor (void)
+-- import Control.Applicative hiding ((<|>), optional, many)
 import ParsingUtils
 import TemplateSimpleGet
 import Data.List(elemIndex)
@@ -117,7 +117,7 @@ parseUrlQueryParts search = (char '?' *> (sepBy (parseUrlQueryPart search) (char
 parseUrlQueryPart :: (String -> Maybe MyField) -> Parser UrlQueryPart
 parseUrlQueryPart search = do
     n <- lexeme parseQueryPartName
-    char '='
+    _ <- char '='
     parseUrlQueryPartName search n
 
 parseUrlQueryPartName :: (String -> Maybe MyField) -> String -> Parser UrlQueryPart
