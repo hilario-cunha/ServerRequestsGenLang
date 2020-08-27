@@ -9,16 +9,16 @@ namespace Tlantic.Server.HierarchicalStructure
         {
             this.serverConfig = serverConfig;
         }
+        public IChoiceGetRequestWithRetry<Response<HierarchicalStructureEntry[]>,NetworkError> TryToGetHierarchicalStructureRequest(string rootHsId)
+        {
+            var urlBuilder = CreateUrlBuilderTryToGetHierarchicalStructureRequest(rootHsId);
+            return serverConfig.TryToGet<HierarchicalStructureEntry[]>(urlBuilder);
+        }
         public UrlBuilder CreateUrlBuilderTryToGetHierarchicalStructureRequest(string rootHsId)
         {
             var parts = new UrlParts("hierarchicalstructure",rootHsId);
             var queryParts = new UrlQueryParameters();
             return new UrlBuilder(parts,queryParts);
-        }
-        public IChoiceGetRequestWithRetry<Response<HierarchicalStructureEntry[]>,NetworkError> TryToGetHierarchicalStructureRequest(string rootHsId)
-        {
-            var urlBuilder = CreateUrlBuilderTryToGetHierarchicalStructureRequest(rootHsId);
-            return serverConfig.TryToGet<HierarchicalStructureEntry[]>(urlBuilder);
         }
     }
 }

@@ -78,6 +78,15 @@ mkCu = mkNamespaceWithClass mkTemplateSimpleGetClass
 createAndWriteToFile :: Pretty a => FilePath -> a -> IO ()
 createAndWriteToFile fileName cu  = writeFile fileName $ prettyPrint cu      
     
+callMethodFromServerConfig :: String -> [TypeArgument] -> [Argument] -> Expression
+callMethodFromServerConfig methodName typeArguments  = Invocation $ MemberAccess $ mkPrimaryMemberAccessWithTypeArguments (mkSimpleName "serverConfig") methodName typeArguments 
+
+generateUrlBuilderMethods :: [UlrBuilderMethod] -> [MemberDeclaration]
+generateUrlBuilderMethods urlBuilderMethods = map generateUlrBuilderMethod urlBuilderMethods
+
+callUrlBuilder :: UlrBuilderMethod -> Statement
+callUrlBuilder ulrBuilderMethod = mkAndInitLocalVar "urlBuilder" $  invokeUrlBuilderMethod ulrBuilderMethod
+
 createTemplateSimpleGet :: TemplateSimpleGet -> NamespaceWithClass
 createTemplateSimpleGet (TemplateSimpleGet extraUsings functionalityName methodsTryTo) = 
     createNamespaceWithClass
@@ -86,25 +95,34 @@ createTemplateSimpleGet (TemplateSimpleGet extraUsings functionalityName methods
         (createClassWithMethods 
             cn
             (mkTemplateSimpleGetCtor cn)
-            (concat $ map mkTemplateSimpleMethod methodsTryTo)
+            ((map mkTemplateSimpleMethod methodsTryTo) ++ urlBuilderMethods)
         )
     where 
+        extractUrlBuilderMethod (MethodTryToGet (MethodInfo methodName _ _) urlBuilder) = UlrBuilderMethod ("CreateUrlBuilder" ++ methodName) urlBuilder
+        extractUrlBuilderMethod (MethodTryToPost (MethodInfo methodName _ _) _ urlBuilder) = UlrBuilderMethod ("CreateUrlBuilder" ++ methodName) urlBuilder
+        
+        extractUrlBuilderMethods = map extractUrlBuilderMethod methodsTryTo
+        urlBuilderMethods = generateUrlBuilderMethods extractUrlBuilderMethods
+
         usingsAux = ("Tlantic.Server.Core" : "System" : extraUsings)
         namespace = ("Tlantic.Server." ++ functionalityName)
         cn = functionalityName ++ "ServerRequests"
-        mkTemplateSimpleMethod (MethodTryToGet mi@(MethodInfo mn _ _) u) = [generateUlrBuilderMethod ulrBuilderMethod, mkTemplateSimpleGetMethod mi ulrBuilderMethod]
+        mkTemplateSimpleMethod (MethodTryToGet mi@(MethodInfo mn responseT _) u) = mkTemplateSimpleGetMethod mi callUrlBuilderMethod callTryToGet
             where 
                 ulrBuilderMethod = UlrBuilderMethod ("CreateUrlBuilder" ++ mn) u
-        mkTemplateSimpleMethod (MethodTryToPost mi@(MethodInfo mn _ _) dataT u) = [generateUlrBuilderMethod ulrBuilderMethod, mkTemplateSimplePostMethod mi dataT ulrBuilderMethod]
+                callUrlBuilderMethod = callUrlBuilder ulrBuilderMethod
+                innerResponseTA = mkInnerResponseTA responseT
+                callTryToGet = mkReturn $ callMethodFromServerConfig "TryToGet" [innerResponseTA] [mkSimpleNameArgument "urlBuilder"]
+        mkTemplateSimpleMethod (MethodTryToPost mi@(MethodInfo mn responseT _) dataT u) = mkTemplateSimplePostMethod mi dataT callUrlBuilderMethod callTryToPost
             where 
                 ulrBuilderMethod = UlrBuilderMethod ("CreateUrlBuilder" ++ mn) u
+                callUrlBuilderMethod = callUrlBuilder ulrBuilderMethod
+                callTryToPost = mkReturn $ callMethodFromServerConfig "TryToPost" [(mkTypeNamedTypeArgument dataT), innerResponseTA] [mkSimpleNameArgument "urlBuilder", mkSimpleNameArgument "data"]
+                innerResponseTA = mkInnerResponseTA responseT
 
-callUrlBuilder :: UlrBuilderMethod -> Statement
-callUrlBuilder ulrBuilderMethod = mkAndInitLocalVar "urlBuilder" $  invokeUrlBuilderMethod ulrBuilderMethod
-
-mkTemplateSimpleGetMethod :: MethodInfo -> UlrBuilderMethod -> MemberDeclaration
-mkTemplateSimpleGetMethod (MethodInfo methodName responseT args) ulrBuilderMethod = 
-    mkMethodMemberDeclaration [Public] returnType methodName methodArgs [callUrlBuilder ulrBuilderMethod, callTryToGet]
+mkTemplateSimpleGetMethod :: MethodInfo -> Statement -> Statement -> MemberDeclaration
+mkTemplateSimpleGetMethod (MethodInfo methodName responseT args) callUrlBuilderMethod callTryToGet = 
+    mkMethodMemberDeclaration [Public] returnType methodName methodArgs [callUrlBuilderMethod, callTryToGet]
     where 
         returnType = mkTypeNamedWithTypeArguments "IChoiceGetRequestWithRetry" [responseTA, networkErrorTA]
         responseTA = TypeArgument (mkTypeNamedWithTypeArguments "Response" [innerResponseTA])
@@ -112,15 +130,10 @@ mkTemplateSimpleGetMethod (MethodInfo methodName responseT args) ulrBuilderMetho
         innerResponseTA = mkInnerResponseTA responseT
         
         methodArgs = (mkArgs args)
-
-        callTryToGet = mkReturn $ callMethodFromServerConfig "TryToGet" [innerResponseTA] [mkSimpleNameArgument "urlBuilder"]
         
-callMethodFromServerConfig :: String -> [TypeArgument] -> [Argument] -> Expression
-callMethodFromServerConfig methodName typeArguments  = Invocation $ MemberAccess $ mkPrimaryMemberAccessWithTypeArguments (mkSimpleName "serverConfig") methodName typeArguments 
-
-mkTemplateSimplePostMethod :: MethodInfo -> String -> UlrBuilderMethod -> MemberDeclaration
-mkTemplateSimplePostMethod (MethodInfo methodName responseT args) dataT ulrBuilderMethod = 
-    mkMethodMemberDeclaration [Public] returnType methodName methodArgs [callUrlBuilder ulrBuilderMethod, callTryToPost]
+mkTemplateSimplePostMethod :: MethodInfo -> String -> Statement -> Statement -> MemberDeclaration
+mkTemplateSimplePostMethod (MethodInfo methodName responseT args) dataT callUrlBuilderMethod callTryToPostMethod = 
+    mkMethodMemberDeclaration [Public] returnType methodName methodArgs [callUrlBuilderMethod, callTryToPostMethod]
     where 
         returnType = (mkTypeNamedWithTypeArguments "IChoicePostRequestWithRetry" [responseTA, networkErrorTA])
         responseTA = innerResponseTA
@@ -129,7 +142,9 @@ mkTemplateSimplePostMethod (MethodInfo methodName responseT args) dataT ulrBuild
 
         methodArgs = mkArgs (args ++ [CustomField dataT "data"])
 
-        callTryToPost = mkReturn $ callMethodFromServerConfig "TryToPost" [(mkTypeNamedTypeArgument dataT), innerResponseTA] [mkSimpleNameArgument "urlBuilder", mkSimpleNameArgument "data"]
+mkInnerResponseTA :: ResponseT -> TypeArgument
+mkInnerResponseTA (ResponseT t) = mkTypeNamedTypeArgument t
+mkInnerResponseTA (ResponseTArray t) = mkTypeArrayTypeArgument t
 
 mkTemplateSimpleGetClass :: ClassWithMethods -> Declaration
 mkTemplateSimpleGetClass classWithMethods = 
@@ -150,8 +165,3 @@ mkTemplateSimpleGetCtor ctorName = mkConstructorMemberDeclaration [Internal] cto
     where
         serverConfigFormalParam = mkFormalParam "ServerConfig" "serverConfig"
         serverConfigAssign = mkAssignStatement "this.serverConfig" "serverConfig"
-
-        
-mkInnerResponseTA :: ResponseT -> TypeArgument
-mkInnerResponseTA (ResponseT t) = mkTypeNamedTypeArgument t
-mkInnerResponseTA (ResponseTArray t) = mkTypeArrayTypeArgument t

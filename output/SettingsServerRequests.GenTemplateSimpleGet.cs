@@ -11,16 +11,16 @@ namespace Tlantic.Server.Settings
         {
             this.serverConfig = serverConfig;
         }
+        public IChoicePostRequestWithRetry<Response<List<Setting>>,NetworkError> TryToGetGetSettingsForCodesRequestServer(SettingsRequest data)
+        {
+            var urlBuilder = CreateUrlBuilderTryToGetGetSettingsForCodesRequestServer();
+            return serverConfig.TryToPost<SettingsRequest,Response<List<Setting>>>(urlBuilder,data);
+        }
         public UrlBuilder CreateUrlBuilderTryToGetGetSettingsForCodesRequestServer()
         {
             var parts = new UrlParts("settings","entity","application");
             var queryParts = new UrlQueryParameters();
             return new UrlBuilder(parts,queryParts);
-        }
-        public IChoicePostRequestWithRetry<Response<List<Setting>>,NetworkError> TryToGetGetSettingsForCodesRequestServer(SettingsRequest data)
-        {
-            var urlBuilder = CreateUrlBuilderTryToGetGetSettingsForCodesRequestServer();
-            return serverConfig.TryToPost<SettingsRequest,Response<List<Setting>>>(urlBuilder,data);
         }
     }
 }

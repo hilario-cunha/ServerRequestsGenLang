@@ -10,27 +10,27 @@ namespace Tlantic.Server.Printers
         {
             this.serverConfig = serverConfig;
         }
+        public IChoiceGetRequestWithRetry<Response<PrinterEntryReponse>,NetworkError> TryToGetPrinterRequest(StringNotEmpty macAddress)
+        {
+            var urlBuilder = CreateUrlBuilderTryToGetPrinterRequest(macAddress);
+            return serverConfig.TryToGet<PrinterEntryReponse>(urlBuilder);
+        }
+        public IChoiceGetRequestWithRetry<Response<PrinterEntryReponse[]>,NetworkError> TryToGetPrintersRequest(string retailStoreId)
+        {
+            var urlBuilder = CreateUrlBuilderTryToGetPrintersRequest(retailStoreId);
+            return serverConfig.TryToGet<PrinterEntryReponse[]>(urlBuilder);
+        }
         public UrlBuilder CreateUrlBuilderTryToGetPrinterRequest(StringNotEmpty macAddress)
         {
             var parts = new UrlParts("printers",macAddress.Value);
             var queryParts = new UrlQueryParameters();
             return new UrlBuilder(parts,queryParts);
         }
-        public IChoiceGetRequestWithRetry<Response<PrinterEntryReponse>,NetworkError> TryToGetPrinterRequest(StringNotEmpty macAddress)
-        {
-            var urlBuilder = CreateUrlBuilderTryToGetPrinterRequest(macAddress);
-            return serverConfig.TryToGet<PrinterEntryReponse>(urlBuilder);
-        }
         public UrlBuilder CreateUrlBuilderTryToGetPrintersRequest(string retailStoreId)
         {
             var parts = new UrlParts("printers");
             var queryParts = new UrlQueryParameters(new UrlQueryParameter("store",retailStoreId));
             return new UrlBuilder(parts,queryParts);
-        }
-        public IChoiceGetRequestWithRetry<Response<PrinterEntryReponse[]>,NetworkError> TryToGetPrintersRequest(string retailStoreId)
-        {
-            var urlBuilder = CreateUrlBuilderTryToGetPrintersRequest(retailStoreId);
-            return serverConfig.TryToGet<PrinterEntryReponse[]>(urlBuilder);
         }
     }
 }

@@ -10,27 +10,27 @@ namespace Tlantic.Server.Users
         {
             this.serverConfig = serverConfig;
         }
+        public IChoiceGetRequestWithRetry<Response<UserInfo>,NetworkError> TryToGetUserInfo()
+        {
+            var urlBuilder = CreateUrlBuilderTryToGetUserInfo();
+            return serverConfig.TryToGet<UserInfo>(urlBuilder);
+        }
+        public IChoiceGetRequestWithRetry<Response<List<Store>>,NetworkError> TryToGetUserStoresRequest()
+        {
+            var urlBuilder = CreateUrlBuilderTryToGetUserStoresRequest();
+            return serverConfig.TryToGet<List<Store>>(urlBuilder);
+        }
         public UrlBuilder CreateUrlBuilderTryToGetUserInfo()
         {
             var parts = new UrlParts("users","user");
             var queryParts = new UrlQueryParameters();
             return new UrlBuilder(parts,queryParts);
         }
-        public IChoiceGetRequestWithRetry<Response<UserInfo>,NetworkError> TryToGetUserInfo()
-        {
-            var urlBuilder = CreateUrlBuilderTryToGetUserInfo();
-            return serverConfig.TryToGet<UserInfo>(urlBuilder);
-        }
         public UrlBuilder CreateUrlBuilderTryToGetUserStoresRequest()
         {
             var parts = new UrlParts("user","stores");
             var queryParts = new UrlQueryParameters();
             return new UrlBuilder(parts,queryParts);
-        }
-        public IChoiceGetRequestWithRetry<Response<List<Store>>,NetworkError> TryToGetUserStoresRequest()
-        {
-            var urlBuilder = CreateUrlBuilderTryToGetUserStoresRequest();
-            return serverConfig.TryToGet<List<Store>>(urlBuilder);
         }
     }
 }

@@ -9,16 +9,16 @@ namespace Tlantic.Server.Checklists
         {
             this.serverConfig = serverConfig;
         }
+        public IChoiceGetRequestWithRetry<Response<ChecklistEntryResponse[]>,NetworkError> TryToGetChecklistsRequest()
+        {
+            var urlBuilder = CreateUrlBuilderTryToGetChecklistsRequest();
+            return serverConfig.TryToGet<ChecklistEntryResponse[]>(urlBuilder);
+        }
         public UrlBuilder CreateUrlBuilderTryToGetChecklistsRequest()
         {
             var parts = new UrlParts("checklists");
             var queryParts = new UrlQueryParameters();
             return new UrlBuilder(parts,queryParts);
-        }
-        public IChoiceGetRequestWithRetry<Response<ChecklistEntryResponse[]>,NetworkError> TryToGetChecklistsRequest()
-        {
-            var urlBuilder = CreateUrlBuilderTryToGetChecklistsRequest();
-            return serverConfig.TryToGet<ChecklistEntryResponse[]>(urlBuilder);
         }
     }
 }

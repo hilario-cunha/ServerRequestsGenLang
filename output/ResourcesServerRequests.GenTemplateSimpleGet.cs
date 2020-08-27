@@ -10,16 +10,16 @@ namespace Tlantic.Server.Resources
         {
             this.serverConfig = serverConfig;
         }
+        public IChoiceGetRequestWithRetry<Response<FutureDatesDto>,NetworkError> TryToGetFutureDatesRequest(string itemId,StringNotEmpty retailStoreId)
+        {
+            var urlBuilder = CreateUrlBuilderTryToGetFutureDatesRequest(itemId,retailStoreId);
+            return serverConfig.TryToGet<FutureDatesDto>(urlBuilder);
+        }
         public UrlBuilder CreateUrlBuilderTryToGetFutureDatesRequest(string itemId,StringNotEmpty retailStoreId)
         {
             var parts = new UrlParts("resources","items","sku",itemId,"expirations");
             var queryParts = new UrlQueryParameters(new UrlQueryParameter("store",retailStoreId.Value));
             return new UrlBuilder(parts,queryParts);
-        }
-        public IChoiceGetRequestWithRetry<Response<FutureDatesDto>,NetworkError> TryToGetFutureDatesRequest(string itemId,StringNotEmpty retailStoreId)
-        {
-            var urlBuilder = CreateUrlBuilderTryToGetFutureDatesRequest(itemId,retailStoreId);
-            return serverConfig.TryToGet<FutureDatesDto>(urlBuilder);
         }
     }
 }

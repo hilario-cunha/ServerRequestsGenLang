@@ -9,16 +9,16 @@ namespace Tlantic.Server.Barcodes
         {
             this.serverConfig = serverConfig;
         }
+        public IChoiceGetRequestWithRetry<Response<BarcodeRule[]>,NetworkError> TryToGetScanCodeRulesRequest()
+        {
+            var urlBuilder = CreateUrlBuilderTryToGetScanCodeRulesRequest();
+            return serverConfig.TryToGet<BarcodeRule[]>(urlBuilder);
+        }
         public UrlBuilder CreateUrlBuilderTryToGetScanCodeRulesRequest()
         {
             var parts = new UrlParts("barcodes","rules");
             var queryParts = new UrlQueryParameters();
             return new UrlBuilder(parts,queryParts);
-        }
-        public IChoiceGetRequestWithRetry<Response<BarcodeRule[]>,NetworkError> TryToGetScanCodeRulesRequest()
-        {
-            var urlBuilder = CreateUrlBuilderTryToGetScanCodeRulesRequest();
-            return serverConfig.TryToGet<BarcodeRule[]>(urlBuilder);
         }
     }
 }
