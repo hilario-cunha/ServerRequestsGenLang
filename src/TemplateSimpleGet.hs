@@ -116,8 +116,11 @@ mkTemplateSimpleMethods = map mkTemplateSimpleMethod
 
 mkTemplateSimpleMethod :: MethodTryTo -> MemberDeclaration
 mkTemplateSimpleMethod (MethodTryTo methodAction (MethodInfo methodName responseT args) u) = 
-    mkMethodMemberDeclaration [Public] returnType methodName (mkArgs args) body
+    mkMethodMemberDeclaration [Public] returnType methodName (mkParams methodAction) body
     where 
+        mkParams (MethodActionGet) = mkArgs args
+        mkParams (MethodActionPost dataT) = mkArgs (args ++ [CustomField dataT "data"])
+
         responseTA = mkResponseTA responseT
         
         returnType = (mkIChoice methodAction)
