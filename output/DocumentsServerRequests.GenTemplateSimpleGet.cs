@@ -9,11 +9,15 @@ namespace Tlantic.Server.Documents
         {
             this.serverConfig = serverConfig;
         }
-        public IChoiceGetRequestWithRetry<Response<DocumentEntryResponse[]>,NetworkError> TryToGetGetAvailableLabelsRequest(string retailStoreId)
+        public UrlBuilder CreateUrlBuilderTryToGetGetAvailableLabelsRequest(string retailStoreId)
         {
             var parts = new UrlParts("documents");
             var queryParts = new UrlQueryParameters(new UrlQueryParameter("store",retailStoreId));
-            var urlBuilder = new UrlBuilder(parts,queryParts);
+            return new UrlBuilder(parts,queryParts);
+        }
+        public IChoiceGetRequestWithRetry<Response<DocumentEntryResponse[]>,NetworkError> TryToGetGetAvailableLabelsRequest(string retailStoreId)
+        {
+            var urlBuilder = CreateUrlBuilderTryToGetGetAvailableLabelsRequest(retailStoreId);
             return serverConfig.TryToGet<DocumentEntryResponse[]>(urlBuilder);
         }
     }

@@ -176,3 +176,6 @@ mkLocalVarDeclarationVar = LocalVarDeclaration Var
         
 mkAndInitLocalVar :: String -> Expression -> Statement
 mkAndInitLocalVar varName exp = Declaration (mkLocalVarDeclarationVar [mkVariableDeclaratorWithInitializerExpression varName exp])
+
+mkInvokeMethod :: String -> [Argument] -> Expression
+mkInvokeMethod methodName = Invocation (mkSimpleName methodName)

@@ -86,26 +86,24 @@ createTemplateSimpleGet (TemplateSimpleGet extraUsings functionalityName methods
         (createClassWithMethods 
             cn
             (mkTemplateSimpleGetCtor cn)
-            (map mkTemplateSimpleMethod methodsTryTo)
+            (concat $ map mkTemplateSimpleMethod methodsTryTo)
         )
     where 
         usingsAux = ("Tlantic.Server.Core" : "System" : extraUsings)
         namespace = ("Tlantic.Server." ++ functionalityName)
         cn = functionalityName ++ "ServerRequests"
-        mkTemplateSimpleMethod (MethodTryToGet mi u) = mkTemplateSimpleGetMethod mi u
-        mkTemplateSimpleMethod (MethodTryToPost mi dataT u) = mkTemplateSimplePostMethod mi dataT u
+        mkTemplateSimpleMethod (MethodTryToGet mi@(MethodInfo mn _ _) u) = [mkUlrBuilderMethod ulrBuilderMethod, mkTemplateSimpleGetMethod mi ulrBuilderMethod]
+            where 
+                ulrBuilderMethod = UlrBuilderMethod ("CreateUrlBuilder" ++ mn) u
+        mkTemplateSimpleMethod (MethodTryToPost mi dataT u) = [mkTemplateSimplePostMethod mi dataT u]
 
-mkTemplateSimpleGetMethodBody :: UrlBuilder -> TypeArgument -> [Statement]
-mkTemplateSimpleGetMethodBody urlGet innerResponseTA = (mkUrlBuilder urlGet ++ [returnStatement])
-    where
-        returnStatement = mkReturn $ Invocation tryToGetMemberAccess trytoGetArgs
-        trytoGetArgs = [mkSimpleNameArgument "urlBuilder"]
-        tryToGetMemberAccess = MemberAccess $ mkPrimaryMemberAccessWithTypeArguments (mkSimpleName "serverConfig") "TryToGet" [innerResponseTA]
-
-mkTemplateSimpleGetMethod :: MethodInfo -> UrlBuilder -> MemberDeclaration
-mkTemplateSimpleGetMethod (MethodInfo methodName responseT args) urlGet = 
-    mkMethodMemberDeclaration [Public] returnType methodName (mkArgs args) (mkTemplateSimpleGetMethodBody urlGet innerResponseTA)
+mkTemplateSimpleGetMethod :: MethodInfo -> UlrBuilderMethod -> MemberDeclaration
+mkTemplateSimpleGetMethod (MethodInfo methodName responseT args) ulrBuilderMethod = 
+    mkMethodMemberDeclaration [Public] returnType methodName (mkArgs args) [callUrlBuilder, callTryToGet]
     where 
+        callUrlBuilder = mkAndInitLocalVar "urlBuilder" $  invokeUrlBuilderMethod ulrBuilderMethod
+        callTryToGet = mkReturn $ Invocation (MemberAccess $ mkPrimaryMemberAccessWithTypeArguments (mkSimpleName "serverConfig") "TryToGet" [innerResponseTA]) [mkSimpleNameArgument "urlBuilder"]
+        
         returnType = mkTypeNamedWithTypeArguments "IChoiceGetRequestWithRetry" [responseTA, networkErrorTA]
         responseTA = TypeArgument (mkTypeNamedWithTypeArguments "Response" [innerResponseTA])
         networkErrorTA = TypeArgument  (mkTypeNamed "NetworkError")

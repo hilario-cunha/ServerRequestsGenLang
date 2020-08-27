@@ -9,11 +9,15 @@ namespace Tlantic.Server.ItemLists
         {
             this.serverConfig = serverConfig;
         }
-        public IChoiceGetRequestWithRetry<Response<ItemListEntryResponse[]>,NetworkError> TryToGetItemListsRequest()
+        public UrlBuilder CreateUrlBuilderTryToGetItemListsRequest()
         {
             var parts = new UrlParts("item-lists");
             var queryParts = new UrlQueryParameters();
-            var urlBuilder = new UrlBuilder(parts,queryParts);
+            return new UrlBuilder(parts,queryParts);
+        }
+        public IChoiceGetRequestWithRetry<Response<ItemListEntryResponse[]>,NetworkError> TryToGetItemListsRequest()
+        {
+            var urlBuilder = CreateUrlBuilderTryToGetItemListsRequest();
             return serverConfig.TryToGet<ItemListEntryResponse[]>(urlBuilder);
         }
     }

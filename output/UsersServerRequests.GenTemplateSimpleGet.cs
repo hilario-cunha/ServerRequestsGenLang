@@ -10,18 +10,26 @@ namespace Tlantic.Server.Users
         {
             this.serverConfig = serverConfig;
         }
-        public IChoiceGetRequestWithRetry<Response<UserInfo>,NetworkError> TryToGetUserInfo()
+        public UrlBuilder CreateUrlBuilderTryToGetUserInfo()
         {
             var parts = new UrlParts("users","user");
             var queryParts = new UrlQueryParameters();
-            var urlBuilder = new UrlBuilder(parts,queryParts);
+            return new UrlBuilder(parts,queryParts);
+        }
+        public IChoiceGetRequestWithRetry<Response<UserInfo>,NetworkError> TryToGetUserInfo()
+        {
+            var urlBuilder = CreateUrlBuilderTryToGetUserInfo();
             return serverConfig.TryToGet<UserInfo>(urlBuilder);
         }
-        public IChoiceGetRequestWithRetry<Response<List<Store>>,NetworkError> TryToGetUserStoresRequest()
+        public UrlBuilder CreateUrlBuilderTryToGetUserStoresRequest()
         {
             var parts = new UrlParts("user","stores");
             var queryParts = new UrlQueryParameters();
-            var urlBuilder = new UrlBuilder(parts,queryParts);
+            return new UrlBuilder(parts,queryParts);
+        }
+        public IChoiceGetRequestWithRetry<Response<List<Store>>,NetworkError> TryToGetUserStoresRequest()
+        {
+            var urlBuilder = CreateUrlBuilderTryToGetUserStoresRequest();
             return serverConfig.TryToGet<List<Store>>(urlBuilder);
         }
     }
