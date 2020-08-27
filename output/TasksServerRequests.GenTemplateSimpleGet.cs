@@ -33,11 +33,15 @@ namespace Tlantic.Server.Tasks
             var urlBuilder = CreateUrlBuilderTryToGetTasksSummaryRequest(retailStoreId,status,fromScheduledStart,toScheduledStart);
             return serverConfig.TryToGet<TasksSummaryResponse>(urlBuilder);
         }
-        public IChoicePostRequestWithRetry<Response<CreateTaskResponse>,NetworkError> TryToGetCreateTaskRequest(CreateTaskRequestToSend data)
+        public UrlBuilder CreateUrlBuilderTryToGetCreateTaskRequest()
         {
             var parts = new UrlParts("tasks");
             var queryParts = new UrlQueryParameters();
-            var urlBuilder = new UrlBuilder(parts,queryParts);
+            return new UrlBuilder(parts,queryParts);
+        }
+        public IChoicePostRequestWithRetry<Response<CreateTaskResponse>,NetworkError> TryToGetCreateTaskRequest(CreateTaskRequestToSend data)
+        {
+            var urlBuilder = CreateUrlBuilderTryToGetCreateTaskRequest();
             return serverConfig.TryToPost<CreateTaskRequestToSend,Response<CreateTaskResponse>>(urlBuilder,data);
         }
     }

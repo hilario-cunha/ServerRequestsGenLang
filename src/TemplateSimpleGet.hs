@@ -25,6 +25,22 @@ data MyField= IntField String
             | CustomField String String
             deriving Show
 
+data TemplateSimpleGet = TemplateSimpleGet [String] String [MethodTryTo]
+    deriving Show
+
+data ResponseT  = ResponseT String
+                | ResponseTArray String
+                deriving Show
+
+type MethodName = String
+
+data MethodInfo = MethodInfo MethodName ResponseT [MyField]
+    deriving Show
+
+data MethodTryTo= MethodTryToGet MethodInfo UrlBuilder
+                | MethodTryToPost MethodInfo String UrlBuilder
+                deriving Show
+
 extractNameFromMyField :: MyField -> String
 extractNameFromMyField (IntField n) = n
 extractNameFromMyField (StringField n) = n
@@ -46,24 +62,8 @@ mkFormalParamMyField (CustomField t n) = mkFormalParam t n
 mkArgs :: [MyField] -> [FormalParam]
 mkArgs fields = map mkFormalParamMyField fields
 
-data TemplateSimpleGet = TemplateSimpleGet [String] String [MethodTryTo]
-    deriving Show
-
-data ResponseT  = ResponseT String
-                | ResponseTArray String
-                deriving Show
-
-type MethodName = String
-
-data MethodInfo = MethodInfo MethodName ResponseT [MyField]
-    deriving Show
-
 extractFieldsFromMethodInfo :: MethodInfo -> [MyField]
 extractFieldsFromMethodInfo (MethodInfo _ _ fields) = fields
-
-data MethodTryTo= MethodTryToGet MethodInfo UrlBuilder
-                | MethodTryToPost MethodInfo String UrlBuilder
-                deriving Show
 
 createAndWriteToFileTemplateSimpleGet :: TemplateSimpleGet -> IO ()
 createAndWriteToFileTemplateSimpleGet templateData  = 
@@ -92,36 +92,44 @@ createTemplateSimpleGet (TemplateSimpleGet extraUsings functionalityName methods
         usingsAux = ("Tlantic.Server.Core" : "System" : extraUsings)
         namespace = ("Tlantic.Server." ++ functionalityName)
         cn = functionalityName ++ "ServerRequests"
-        mkTemplateSimpleMethod (MethodTryToGet mi@(MethodInfo mn _ _) u) = [mkUlrBuilderMethod ulrBuilderMethod, mkTemplateSimpleGetMethod mi ulrBuilderMethod]
+        mkTemplateSimpleMethod (MethodTryToGet mi@(MethodInfo mn _ _) u) = [generateUlrBuilderMethod ulrBuilderMethod, mkTemplateSimpleGetMethod mi ulrBuilderMethod]
             where 
                 ulrBuilderMethod = UlrBuilderMethod ("CreateUrlBuilder" ++ mn) u
-        mkTemplateSimpleMethod (MethodTryToPost mi dataT u) = [mkTemplateSimplePostMethod mi dataT u]
+        mkTemplateSimpleMethod (MethodTryToPost mi@(MethodInfo mn _ _) dataT u) = [generateUlrBuilderMethod ulrBuilderMethod, mkTemplateSimplePostMethod mi dataT ulrBuilderMethod]
+            where 
+                ulrBuilderMethod = UlrBuilderMethod ("CreateUrlBuilder" ++ mn) u
+
+callUrlBuilder :: UlrBuilderMethod -> Statement
+callUrlBuilder ulrBuilderMethod = mkAndInitLocalVar "urlBuilder" $  invokeUrlBuilderMethod ulrBuilderMethod
 
 mkTemplateSimpleGetMethod :: MethodInfo -> UlrBuilderMethod -> MemberDeclaration
 mkTemplateSimpleGetMethod (MethodInfo methodName responseT args) ulrBuilderMethod = 
-    mkMethodMemberDeclaration [Public] returnType methodName (mkArgs args) [callUrlBuilder, callTryToGet]
+    mkMethodMemberDeclaration [Public] returnType methodName methodArgs [callUrlBuilder ulrBuilderMethod, callTryToGet]
     where 
-        callUrlBuilder = mkAndInitLocalVar "urlBuilder" $  invokeUrlBuilderMethod ulrBuilderMethod
-        callTryToGet = mkReturn $ Invocation (MemberAccess $ mkPrimaryMemberAccessWithTypeArguments (mkSimpleName "serverConfig") "TryToGet" [innerResponseTA]) [mkSimpleNameArgument "urlBuilder"]
-        
         returnType = mkTypeNamedWithTypeArguments "IChoiceGetRequestWithRetry" [responseTA, networkErrorTA]
         responseTA = TypeArgument (mkTypeNamedWithTypeArguments "Response" [innerResponseTA])
         networkErrorTA = TypeArgument  (mkTypeNamed "NetworkError")
         innerResponseTA = mkInnerResponseTA responseT
+        
+        methodArgs = (mkArgs args)
 
-mkTemplateSimplePostMethod :: MethodInfo -> [Char] -> UrlBuilder -> MemberDeclaration
-mkTemplateSimplePostMethod (MethodInfo methodName responseT args) dataT urlGet = mkMethodMemberDeclaration [Public] methodReturnT methodName methodArgs body
+        callTryToGet = mkReturn $ callMethodFromServerConfig "TryToGet" [innerResponseTA] [mkSimpleNameArgument "urlBuilder"]
+        
+callMethodFromServerConfig :: String -> [TypeArgument] -> [Argument] -> Expression
+callMethodFromServerConfig methodName typeArguments  = Invocation $ MemberAccess $ mkPrimaryMemberAccessWithTypeArguments (mkSimpleName "serverConfig") methodName typeArguments 
+
+mkTemplateSimplePostMethod :: MethodInfo -> String -> UlrBuilderMethod -> MemberDeclaration
+mkTemplateSimplePostMethod (MethodInfo methodName responseT args) dataT ulrBuilderMethod = 
+    mkMethodMemberDeclaration [Public] returnType methodName methodArgs [callUrlBuilder ulrBuilderMethod, callTryToPost]
     where 
-        methodReturnT = (mkTypeNamedWithTypeArguments "IChoicePostRequestWithRetry" [responseTA, networkErrorTA])
-        responseTA = mkInnerResponseTA responseT
+        returnType = (mkTypeNamedWithTypeArguments "IChoicePostRequestWithRetry" [responseTA, networkErrorTA])
+        responseTA = innerResponseTA
+        innerResponseTA = mkInnerResponseTA responseT
         networkErrorTA = TypeArgument  (mkTypeNamed "NetworkError")
 
         methodArgs = mkArgs (args ++ [CustomField dataT "data"])
-        body  = mkTemplateSimplePostMethodBody responseTA
-        mkTemplateSimplePostMethodBody responseTTypeArgument = (mkUrlBuilder urlGet ++ [ret])
-            where 
-                ret = mkReturnServerConfig "TryToPost" [(mkTypeNamedTypeArgument dataT), responseTTypeArgument] [mkSimpleNameArgument "urlBuilder", mkSimpleNameArgument "data"]
-                mkReturnServerConfig mn tArgs args1 = Return (Just (Invocation (MemberAccess $ PrimaryMemberAccess (SimpleName (Identifier "serverConfig") [] ) (Identifier mn) tArgs) args1))
+
+        callTryToPost = mkReturn $ callMethodFromServerConfig "TryToPost" [(mkTypeNamedTypeArgument dataT), innerResponseTA] [mkSimpleNameArgument "urlBuilder", mkSimpleNameArgument "data"]
 
 mkTemplateSimpleGetClass :: ClassWithMethods -> Declaration
 mkTemplateSimpleGetClass classWithMethods = 
